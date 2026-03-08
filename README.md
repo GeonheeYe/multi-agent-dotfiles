@@ -94,21 +94,33 @@ cd ~/dotfiles && ./setup.sh
 
 Symlinks are created for whichever agents are installed. MCP config is deployed automatically if `secrets.json` exists.
 
-### 5. Install Claude Code Plugins (optional)
+### 5. Install Plugins (optional)
 
-Plugins add extra skills to Claude Code. We recommend starting with **superpowers** — it includes essential workflow skills like `brainstorming`, `writing-plans`, `systematic-debugging`, `test-driven-development`, and more. These skills guide Claude through structured workflows so you get consistent, high-quality results on complex tasks.
-
-```bash
-claude plugin install superpowers@claude-plugins-official
-```
-
-You can also browse and install other plugins:
+Plugins are packages of skills, commands, and workflows. In **Claude Code**, they are managed through the plugin system. In **Codex CLI**, plugins are not natively supported — but thanks to `setup.sh`, any skills inside a Claude Code plugin are automatically extracted and added to Codex as regular skills. So installing a plugin in Claude Code makes its skills available in Codex too.
 
 ```bash
-claude plugin discover
+# Install a plugin in Claude Code
+claude plugin install <plugin-name>@<marketplace>
+
+# Then re-run setup.sh to sync plugin skills to Codex and Cursor
+./setup.sh
 ```
 
-> **Note for Codex users:** After installing Claude Code plugins, run `./setup.sh` again. Plugin skills will be automatically added to Codex as well.
+---
+
+> **Recommended: `superpowers`**
+>
+> `superpowers` is a plugin that adds structured workflow skills — `brainstorming`, `writing-plans`, `systematic-debugging`, `test-driven-development`, and more. These skills guide the agent through consistent, step-by-step processes for complex tasks. Highly recommended as a starting point.
+>
+> **Finding plugins in Claude Code:**
+> ```bash
+> claude plugin discover
+> ```
+>
+> **Finding skills in Codex CLI** (after running `./setup.sh`):
+> ```bash
+> ls ~/.codex/skills/
+> ```
 
 ### 6. Make Your Fork Private & Push
 
