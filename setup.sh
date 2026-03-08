@@ -54,6 +54,20 @@ if [ -d "$HOME/.cursor" ]; then
   backup_and_link "$DOTFILES/rules/base.md" "$HOME/.cursor/rules/base.mdc"
 fi
 
+# --- sync Claude Code plugin skills to dotfiles/skills ---
+# Makes plugin skills (e.g. superpowers/brainstorming) available in Codex and Cursor too
+if [ -d "$HOME/.claude/plugins/cache" ]; then
+  echo "Syncing plugin skills..."
+  find "$HOME/.claude/plugins/cache" -path "*/skills/*/SKILL.md" | while read skill_md; do
+    skill_dir=$(dirname "$skill_md")
+    skill_name=$(basename "$skill_dir")
+    target="$DOTFILES/skills/$skill_name"
+    if [ ! -e "$target" ]; then
+      ln -sf "$skill_dir" "$target" && echo "✓ plugin skill: $skill_name"
+    fi
+  done
+fi
+
 # --- mcp ---
 if [ -f "$DOTFILES/mcp/secrets.json" ]; then
   "$DOTFILES/mcp/apply.sh"
