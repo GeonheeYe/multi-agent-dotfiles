@@ -1,0 +1,12 @@
+{
+  "mcpServers": {
+    "my-server": {
+      "type": "stdio",
+      "command": "node",
+      "args": ["${MY_SERVER_PATH}"],
+      "env": {
+        "MY_API_TOKEN": "${MY_API_TOKEN}"
+      }
+    }
+  }
+}

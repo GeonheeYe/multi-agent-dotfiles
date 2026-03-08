@@ -77,8 +77,9 @@ This file becomes your `CLAUDE.md`, `AGENTS.md`, and Cursor rules — all in one
 
 ```bash
 cd ~/dotfiles
+cp mcp/servers.json.example mcp/servers.json
 cp mcp/secrets.json.example mcp/secrets.json
-# Open mcp/secrets.json and fill in your tokens manually
+# Edit both files with your MCP server config and tokens
 ```
 
 > For MCP servers (Slack, Notion, etc.), connect them through each agent's own settings UI or follow each service's setup guide.
