@@ -8,23 +8,10 @@ Fork this repo, fill in your info, run `setup.sh`. Done.
 
 ## Requirements
 
-### Step 0 — Install an agent first
-
-You need at least one AI agent installed:
-
-- [Claude Code](https://claude.ai/code)
-- [Codex CLI](https://github.com/openai/codex)
-- [Cursor](https://cursor.com)
-
-You also need a [GitHub account](https://github.com/signup) to fork and save your dotfiles.
-
-### Step 0.5 — Install git and python3
-
-Once you have Claude Code or Codex running, say:
-
-> "Install git and python3 on my machine if they're not already installed."
-
-The agent will detect your OS and run the right commands for you.
+- git
+- python3
+- A [GitHub account](https://github.com/signup)
+- At least one agent: [Claude Code](https://claude.ai/code) · [Codex CLI](https://github.com/openai/codex) · [Cursor](https://cursor.com)
 
 ---
 
@@ -57,7 +44,13 @@ dotfiles/
 
 ## Quick Start
 
-### 1. Fork & Clone
+### 1. Install an agent
+
+Install at least one agent first. Then open it and say:
+
+> "Install git and python3 on my machine if they're not already installed."
+
+### 2. Fork & Clone
 
 Fork this repo on GitHub, then clone your fork:
 
@@ -66,7 +59,7 @@ git clone https://github.com/{YOUR_USERNAME}/multi-agent-dotfiles ~/dotfiles
 cd ~/dotfiles
 ```
 
-### 2. Fill in `rules/base.md`
+### 3. Fill in `rules/base.md`
 
 This file becomes your `CLAUDE.md`, `AGENTS.md`, and Cursor rules — all in one.
 
@@ -74,9 +67,7 @@ Open Claude Code or Codex CLI from the `~/dotfiles` directory and say:
 
 > "Fill in `~/dotfiles/rules/base.md` with my personal info. Ask me one question at a time."
 
-The agent will ask for your name, role, preferred language, and working style — then write the file for you.
-
-### 3. Set Up MCP (optional)
+### 4. Set Up MCP (optional)
 
 ```bash
 cd ~/dotfiles
@@ -86,7 +77,7 @@ cp mcp/secrets.json.example mcp/secrets.json
 
 > For MCP servers (Slack, Notion, etc.), connect them through each agent's own settings UI or follow each service's setup guide.
 
-### 4. Run Setup
+### 5. Run Setup
 
 ```bash
 cd ~/dotfiles && ./setup.sh
@@ -94,45 +85,40 @@ cd ~/dotfiles && ./setup.sh
 
 Symlinks are created for whichever agents are installed. MCP config is deployed automatically if `secrets.json` exists.
 
-### 5. Install Plugins (optional)
+### 6. Install Plugins (optional)
 
-Plugins are packages of skills, commands, and workflows. In **Claude Code**, they are managed through the plugin system. In **Codex CLI**, plugins are not natively supported — but thanks to `setup.sh`, any skills inside a Claude Code plugin are automatically extracted and added to Codex as regular skills. So installing a plugin in Claude Code makes its skills available in Codex too.
+Plugins are packages of skills, commands, and workflows. In **Claude Code**, they are managed through the plugin system. In **Codex CLI**, plugins are not natively supported — but thanks to `setup.sh`, any skills inside a Claude Code plugin are automatically extracted and added to Codex as regular skills.
 
-In Claude Code, use the `/plugin` command to browse and install plugins directly from the chat interface.
+In Claude Code, use the `/plugin` command in the chat interface to browse and install plugins. Or via CLI:
 
 ```bash
-# Or install via CLI
 claude plugin install <plugin-name>@<marketplace>
 
-# Then re-run setup.sh to sync plugin skills to Codex and Cursor
+# Re-run setup.sh after installing to sync plugin skills to Codex and Cursor
 ./setup.sh
 ```
 
----
-
 > **Recommended: `superpowers`**
 >
-> `superpowers` is a plugin that adds structured workflow skills — `brainstorming`, `writing-plans`, `systematic-debugging`, `test-driven-development`, and more. These skills guide the agent through consistent, step-by-step processes for complex tasks. Highly recommended as a starting point.
+> `superpowers` is a plugin that adds structured workflow skills — `brainstorming`, `writing-plans`, `systematic-debugging`, `test-driven-development`, and more. These skills guide the agent through consistent, step-by-step processes for complex tasks.
 >
-> **Finding plugins in Claude Code:**
 > ```bash
-> claude plugin discover
+> claude plugin install superpowers@claude-plugins-official
 > ```
 >
-> **Finding skills in Codex CLI** (after running `./setup.sh`):
-> ```bash
-> ls ~/.codex/skills/
-> ```
+> After installing, run `./setup.sh` to make these skills available in Codex and Cursor as well.
 
-### 6. Make Your Fork Private & Push
+### 7. Save to Your Private Repo
 
-Your dotfiles contain personal info — keep them private. Go to your fork on GitHub:
+Your dotfiles contain personal info — keep them private.
 
-**Settings → Danger Zone → Change repository visibility → Private**
+Go to your fork on GitHub: **Settings → Danger Zone → Change repository visibility → Private**
 
 Then push your changes:
 
-> "Push my dotfiles changes to GitHub."
+```bash
+cd ~/dotfiles && git add . && git push
+```
 
 ---
 
