@@ -91,7 +91,7 @@ cd ~/dotfiles && ./setup.sh
 
 Symlinks are created for whichever agents are installed. MCP config is deployed automatically if `secrets.json` exists.
 
-### 5. Install Plugins / Skills (optional)
+### 6. Install Plugins / Skills (optional)
 
 > **What is `superpowers`?**
 > A plugin that adds structured workflow skills — `brainstorming`, `writing-plans`, `systematic-debugging`, `test-driven-development`, and more. These guide the agent through consistent, step-by-step processes. Highly recommended.
@@ -112,21 +112,24 @@ claude plugin install superpowers@claude-plugins-official
 ./setup.sh   # syncs plugin skills to Codex and Cursor
 ```
 
-To see available skills in Claude Code, type `/` in the chat.
+To see available skills, type `/` in the chat.
 
 #### Codex CLI
 
-Codex CLI has no plugin system. Instead, install plugins in Claude Code and run `./setup.sh` — plugin skills are automatically added to `~/.codex/skills/`.
+Codex CLI has no plugin system, but you can install skills via natural language:
 
-Check available skills:
+> "Add the superpowers skills to `~/dotfiles/skills/` from `~/.claude/plugins/cache/`, then run `~/dotfiles/setup.sh`."
+
+Or if Claude Code is not installed:
+
+> "Clone the superpowers skills from `https://github.com/anthropics/claude-plugins-official` and add them to `~/dotfiles/skills/`, then run `~/dotfiles/setup.sh`."
+
+Check available skills after setup:
 ```bash
 ls ~/.codex/skills/
 ```
 
-Use a skill in Codex chat:
-> "Use the brainstorming skill to design this feature."
-
-### 6. Push your changes
+### 7. Push your changes
 
 ```bash
 cd ~/dotfiles && git add . && git push
