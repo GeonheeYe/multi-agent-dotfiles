@@ -98,8 +98,10 @@ Symlinks are created for whichever agents are installed. MCP config is deployed 
 
 Plugins are packages of skills, commands, and workflows. In **Claude Code**, they are managed through the plugin system. In **Codex CLI**, plugins are not natively supported — but thanks to `setup.sh`, any skills inside a Claude Code plugin are automatically extracted and added to Codex as regular skills. So installing a plugin in Claude Code makes its skills available in Codex too.
 
+In Claude Code, use the `/plugin` command to browse and install plugins directly from the chat interface.
+
 ```bash
-# Install a plugin in Claude Code
+# Or install via CLI
 claude plugin install <plugin-name>@<marketplace>
 
 # Then re-run setup.sh to sync plugin skills to Codex and Cursor
