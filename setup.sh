@@ -2,7 +2,7 @@
 # setup.sh — Run once on a new machine to create all symlinks
 set -e
 
-DOTFILES="$HOME/dotfiles"
+DOTFILES="$(cd "$(dirname "$0")" && pwd)"
 
 echo "=== dotfiles setup ==="
 
