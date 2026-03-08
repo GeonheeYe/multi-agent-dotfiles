@@ -8,15 +8,23 @@ Fork this repo, fill in your info, run `setup.sh`. Done.
 
 ## Requirements
 
-Install at least one of these agents before starting:
+### Step 0 — Install an agent first
 
-- [Claude Code](https://claude.ai/code)
+You need at least one AI agent installed. Claude Code is recommended as a starting point — it doesn't require git or python3 to install.
+
+- [Claude Code](https://claude.ai/code) ← start here
 - [Codex CLI](https://github.com/openai/codex)
 - [Cursor](https://cursor.com)
 
-Also required:
-- git
-- python3
+You also need a [GitHub account](https://github.com/signup) to fork and save your dotfiles.
+
+### Step 0.5 — Install git and python3
+
+Once you have Claude Code or Codex running, say:
+
+> "Install git and python3 on my machine if they're not already installed."
+
+The agent will detect your OS and run the right commands for you.
 
 ---
 
