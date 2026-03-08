@@ -85,21 +85,24 @@ cp mcp/secrets.json.example mcp/secrets.json
 
 #### Dooray MCP
 
-This dotfiles template includes a ready-to-use Dooray MCP configuration in `mcp/servers.json`. To connect Dooray:
+This dotfiles template includes a ready-to-use Dooray MCP configuration in `mcp/servers.json`. The Dooray MCP server is included as a git submodule in your **private** dotfiles repo — no separate clone needed.
 
-**1. Clone and build the Dooray MCP server:**
+**1. Clone your private dotfiles with submodules:**
 
 ```bash
-git clone https://github.com/GeonheeYe/dooray-mcp.git ~/dooray-mcp
-cd ~/dooray-mcp
-npm install && npm run build
+git clone --recurse-submodules https://github.com/yourname/dotfiles.git ~/dotfiles
 ```
+
+> If you already cloned without `--recurse-submodules`, run:
+> ```bash
+> git submodule update --init
+> ```
 
 **2. Fill in `mcp/secrets.json`:**
 
 ```json
 {
-  "DOORAY_MCP_PATH": "/Users/yourname/dooray-mcp/dist/index.js",
+  "DOORAY_MCP_PATH": "/Users/yourname/dotfiles/mcp/dooray-mcp/dist/index.js",
   "DOORAY_API_TOKEN": "your-dooray-api-token",
   "DOORAY_TENANT_URL": "https://your-tenant.dooray.com"
 }
@@ -108,13 +111,13 @@ npm install && npm run build
 - `DOORAY_API_TOKEN`: Generate from Dooray → My Profile → API Token
 - `DOORAY_TENANT_URL`: Your organization's Dooray URL (e.g. `https://acme.dooray.com`)
 
-**3. Apply the config:**
+**3. Run setup (builds dooray-mcp automatically):**
 
 ```bash
-./mcp/apply.sh
+./setup.sh
 ```
 
-Done — your agents can now access Dooray tasks, wikis, messenger, and drive.
+`setup.sh` detects the submodule and runs `npm install && npm run build` automatically. Done — your agents can now access Dooray tasks, wikis, messenger, and drive.
 
 ### 5. Run Setup
 
