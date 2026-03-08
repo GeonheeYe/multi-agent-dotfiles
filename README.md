@@ -8,6 +8,17 @@ Shared environment for Claude Code, Codex CLI, and Cursor — managed from a sin
 
 - A [GitHub account](https://github.com/signup)
 - At least one agent installed: [Claude Code](https://claude.ai/code) · [Codex CLI](https://github.com/openai/codex) · [Cursor](https://cursor.com)
+- **Linux or macOS** — Windows users must use WSL (see below)
+
+### Windows: Install WSL
+
+Open PowerShell as Administrator and run:
+
+```powershell
+wsl --install
+```
+
+This installs Ubuntu by default. Restart your machine, then follow the rest of this guide inside the WSL terminal.
 
 ---
 
@@ -137,3 +148,21 @@ git add mcp/servers.json && git commit -m "feat: add new MCP server"
 git pull
 ./mcp/apply.sh   # only if MCP config changed
 ```
+
+---
+
+## Troubleshooting
+
+### Skills not showing in Cursor
+
+Cursor has a known bug where it may not follow symlinks to discover skills. If your skills don't appear in Cursor, copy them manually instead:
+
+```bash
+rsync -av ~/dotfiles/skills/ ~/.cursor/skills/
+```
+
+Run this whenever you add new skills. Then restart Cursor.
+
+### skills/ and commands/ are empty after setup
+
+The template ships with empty `skills/` and `commands/` directories by design — they're yours to fill. To get started quickly, install the `superpowers` plugin (see Step 6) which adds skills like `brainstorming`, `writing-plans`, and more. After installing, run `./setup.sh` again to sync them.
