@@ -91,21 +91,42 @@ cd ~/dotfiles && ./setup.sh
 
 Symlinks are created for whichever agents are installed. MCP config is deployed automatically if `secrets.json` exists.
 
-### 6. Install Plugins (optional)
+### 5. Install Plugins / Skills (optional)
 
-Plugins are packages of skills, commands, and workflows. In **Claude Code**, they are managed through the plugin system. In **Codex CLI**, plugins are not natively supported — but thanks to `setup.sh`, any skills inside a Claude Code plugin are automatically extracted and added to Codex as regular skills.
+> **What is `superpowers`?**
+> A plugin that adds structured workflow skills — `brainstorming`, `writing-plans`, `systematic-debugging`, `test-driven-development`, and more. These guide the agent through consistent, step-by-step processes. Highly recommended.
 
-Say to your agent:
+#### Claude Code
 
-> "Install the superpowers plugin for Claude Code, then run `~/dotfiles/setup.sh`."
+Claude Code manages skills through its plugin system.
 
-> **What is superpowers?**
-> `superpowers` adds structured workflow skills — `brainstorming`, `writing-plans`, `systematic-debugging`, `test-driven-development`, and more. These skills guide the agent through consistent, step-by-step processes for complex tasks. Highly recommended.
->
-> In Claude Code, use `/plugin` in the chat to browse and install more plugins.
-> In Codex CLI, installed plugin skills are available automatically after running `./setup.sh`.
+**Option 1 — Natural language:**
+> "Install the superpowers plugin, then run `~/dotfiles/setup.sh`."
 
-### 7. Push your changes
+**Option 2 — `/plugin` command:**
+Type `/plugin` in the chat to open the plugin browser and install from the marketplace.
+
+**Option 3 — CLI:**
+```bash
+claude plugin install superpowers@claude-plugins-official
+./setup.sh   # syncs plugin skills to Codex and Cursor
+```
+
+To see available skills in Claude Code, type `/` in the chat.
+
+#### Codex CLI
+
+Codex CLI has no plugin system. Instead, install plugins in Claude Code and run `./setup.sh` — plugin skills are automatically added to `~/.codex/skills/`.
+
+Check available skills:
+```bash
+ls ~/.codex/skills/
+```
+
+Use a skill in Codex chat:
+> "Use the brainstorming skill to design this feature."
+
+### 6. Push your changes
 
 ```bash
 cd ~/dotfiles && git add . && git push
