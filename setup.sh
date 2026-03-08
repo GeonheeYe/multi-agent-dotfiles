@@ -6,7 +6,6 @@ DOTFILES="$HOME/dotfiles"
 
 echo "=== dotfiles setup ==="
 
-# --- skills ---
 backup_and_link() {
   local target="$1"
   local link="$2"
@@ -17,28 +16,43 @@ backup_and_link() {
   ln -sf "$target" "$link" && echo "✓ $link"
 }
 
-# ~/.claude/skills
-rm -rf ~/.claude/skills
-ln -s "$DOTFILES/skills" ~/.claude/skills && echo "✓ ~/.claude/skills"
+# --- skills ---
+if [ -d "$HOME/.claude" ]; then
+  rm -rf ~/.claude/skills
+  ln -s "$DOTFILES/skills" ~/.claude/skills && echo "✓ ~/.claude/skills"
+fi
 
-# ~/.codex/skills
-rm -rf ~/.codex/skills
-ln -s "$DOTFILES/skills" ~/.codex/skills && echo "✓ ~/.codex/skills"
+if [ -d "$HOME/.codex" ]; then
+  rm -rf ~/.codex/skills
+  ln -s "$DOTFILES/skills" ~/.codex/skills && echo "✓ ~/.codex/skills"
+fi
 
-# ~/.cursor/skills (symlink 버그 있으면 아래 주석 해제 후 sync.sh 사용)
-ln -sf "$DOTFILES/skills" ~/.cursor/skills && echo "✓ ~/.cursor/skills"
+if [ -d "$HOME/.cursor" ]; then
+  ln -sf "$DOTFILES/skills" ~/.cursor/skills && echo "✓ ~/.cursor/skills"
+fi
 
 # --- commands ---
-rm -rf ~/.claude/commands
-ln -s "$DOTFILES/commands" ~/.claude/commands && echo "✓ ~/.claude/commands"
-ln -sf "$DOTFILES/commands" ~/.codex/prompts && echo "✓ ~/.codex/prompts"
-ln -sf "$DOTFILES/commands" ~/.cursor/commands && echo "✓ ~/.cursor/commands"
+if [ -d "$HOME/.claude" ]; then
+  rm -rf ~/.claude/commands
+  ln -s "$DOTFILES/commands" ~/.claude/commands && echo "✓ ~/.claude/commands"
+fi
+
+if [ -d "$HOME/.codex" ]; then
+  ln -sf "$DOTFILES/commands" ~/.codex/prompts && echo "✓ ~/.codex/prompts"
+fi
+
+if [ -d "$HOME/.cursor" ]; then
+  ln -sf "$DOTFILES/commands" ~/.cursor/commands && echo "✓ ~/.cursor/commands"
+fi
 
 # --- rules ---
-mkdir -p ~/.cursor/rules
 backup_and_link "$DOTFILES/rules/base.md" "$HOME/CLAUDE.md"
 backup_and_link "$DOTFILES/rules/base.md" "$HOME/AGENTS.md"
-backup_and_link "$DOTFILES/rules/base.md" "$HOME/.cursor/rules/base.mdc"
+
+if [ -d "$HOME/.cursor" ]; then
+  mkdir -p ~/.cursor/rules
+  backup_and_link "$DOTFILES/rules/base.md" "$HOME/.cursor/rules/base.mdc"
+fi
 
 # --- mcp ---
 if [ -f "$DOTFILES/mcp/secrets.json" ]; then

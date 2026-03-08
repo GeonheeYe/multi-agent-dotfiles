@@ -4,6 +4,22 @@ Shared environment for Claude Code, Codex CLI, and Cursor — managed from a sin
 
 Fork this repo, fill in your info, run `setup.sh`. Done.
 
+---
+
+## Requirements
+
+Install at least one of these agents before starting:
+
+- [Claude Code](https://claude.ai/code)
+- [Codex CLI](https://github.com/openai/codex)
+- [Cursor](https://cursor.com)
+
+Also required:
+- git
+- python3
+
+---
+
 ## Structure
 
 ```
@@ -35,43 +51,32 @@ dotfiles/
 
 ### 1. Fork & Clone
 
+Fork this repo on GitHub, then clone your fork:
+
 ```bash
-# Fork this repo on GitHub first, then:
-git clone https://github.com/{YOUR_USERNAME}/dotfiles ~/dotfiles
+git clone https://github.com/{YOUR_USERNAME}/multi-agent-dotfiles ~/dotfiles
+cd ~/dotfiles
 ```
 
 ### 2. Fill in `rules/base.md`
 
 This file becomes your `CLAUDE.md`, `AGENTS.md`, and Cursor rules — all in one.
 
-Open Claude Code or Codex CLI and say:
+Open Claude Code or Codex CLI from the `~/dotfiles` directory and say:
 
 > "Fill in `~/dotfiles/rules/base.md` with my personal info. Ask me one question at a time."
 
 The agent will ask for your name, role, preferred language, and working style — then write the file for you.
 
-The template looks like this:
-
-```markdown
-## Who I Am
-- {YOUR_NAME}. {YOUR_ROLE}
-- Current focus: {YOUR_CURRENT_WORK}
-
-## Communication Style
-- {YOUR_LANGUAGE} preferred
-...
-```
-
-### 3. Set Up MCP
-
-Edit `mcp/servers.json` to define which MCP servers you want, then fill in your actual tokens in `mcp/secrets.json`:
+### 3. Set Up MCP (optional)
 
 ```bash
+cd ~/dotfiles
 cp mcp/secrets.json.example mcp/secrets.json
 # Open mcp/secrets.json and fill in your tokens manually
 ```
 
-> For the MCP servers themselves (Slack, Notion, Dooray, etc.), connect them through each agent's own settings UI or follow each service's setup guide.
+> For MCP servers (Slack, Notion, etc.), connect them through each agent's own settings UI or follow each service's setup guide.
 
 ### 4. Run Setup
 
@@ -79,7 +84,7 @@ cp mcp/secrets.json.example mcp/secrets.json
 cd ~/dotfiles && ./setup.sh
 ```
 
-Symlinks are created. MCP config is deployed to all agents automatically.
+Symlinks are created for whichever agents are installed. MCP config is deployed automatically if `secrets.json` exists.
 
 ### 5. Install Claude Code Plugins (optional)
 
@@ -87,11 +92,15 @@ Symlinks are created. MCP config is deployed to all agents automatically.
 claude plugin install superpowers@claude-plugins-official
 ```
 
-### 6. Save to Your Private GitHub Repo
+### 6. Make Your Fork Private & Push
 
-Keep your personal dotfiles in a private repo so you can sync across machines. Open Claude Code or Codex and say:
+Your dotfiles contain personal info — keep them private. Go to your fork on GitHub:
 
-> "Create a private GitHub repo called `dotfiles` and push `~/dotfiles` to it."
+**Settings → Danger Zone → Change repository visibility → Private**
+
+Then push your changes:
+
+> "Push my dotfiles changes to GitHub."
 
 ---
 
@@ -134,13 +143,3 @@ git add mcp/servers.json && git commit -m "feat: add new MCP server"
 git pull
 ./mcp/apply.sh   # only if MCP config changed
 ```
-
----
-
-## Requirements
-
-- git
-- python3
-- [Claude Code](https://claude.ai/code) — optional
-- [Codex CLI](https://github.com/openai/codex) — optional
-- [Cursor](https://cursor.com) — optional
