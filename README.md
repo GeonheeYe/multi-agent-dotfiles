@@ -29,7 +29,9 @@ dotfiles/
 ├── rules/
 │   └── base.md          # Your identity & rules → CLAUDE.md / AGENTS.md / .cursor/rules/base.mdc
 ├── skills/              # SKILL.md-based skills (shared across all agents)
-├── commands/            # Slash command prompts
+├── commands/            # Slash command prompts (e.g. /save-q)
+├── memory/              # Personal data — gitignored, never committed
+│   └── questions.json   # Q&A learning records saved via /save-q
 ├── mcp/
 │   ├── servers.json     # MCP server definitions (uses ${ENV_VAR} placeholders)
 │   ├── secrets.json     # Your actual tokens — never committed (gitignored)
@@ -112,6 +114,21 @@ cd ~/dotfiles && git add . && git push
 ---
 
 Once all steps are done, **Claude Code, Codex CLI, and Cursor will share the exact same rules, skills, and commands** — no matter which agent you use or which machine you're on.
+
+---
+
+## Memory (Personal, Not Committed)
+
+The `memory/` directory is gitignored — it stores personal data that should not be shared publicly.
+
+The main use case is a **questions bank** (`memory/questions.json`) that saves key Q&A from your sessions for later review. Use the `/save-q` command (in `commands/`) to add entries from any agent.
+
+```
+memory/
+└── questions.json    # Personal Q&A learning records — gitignored
+```
+
+> This directory exists locally on each machine but is never pushed to GitHub. Back it up separately if needed.
 
 ---
 
