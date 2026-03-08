@@ -40,49 +40,38 @@ dotfiles/
 git clone https://github.com/{YOUR_USERNAME}/dotfiles ~/dotfiles
 ```
 
-### 2. Edit `rules/base.md`
+### 2. Fill in `rules/base.md`
 
 This file becomes your `CLAUDE.md`, `AGENTS.md`, and Cursor rules — all in one.
 
-```markdown
-# CLAUDE.md
+Open Claude Code or Codex CLI and say:
 
+> "Fill in `~/dotfiles/rules/base.md` with my personal info. Ask me one question at a time."
+
+The agent will ask for your name, role, preferred language, and working style — then write the file for you.
+
+The template looks like this:
+
+```markdown
 ## Who I Am
 - {YOUR_NAME}. {YOUR_ROLE}
 - Current focus: {YOUR_CURRENT_WORK}
 
 ## Communication Style
 - {YOUR_LANGUAGE} preferred
-- Explain the "why" behind decisions briefly
-- Break tasks into steps, confirm one at a time
-- When unclear, ask with AskUserQuestion tool — never assume
-
-## Code Style
-- Practical first: working code over perfect code
-- Avoid unnecessary abstractions
-- Use clear, meaningful variable and function names
-
-## Response Style
-- Keep it short and clear: only what's needed
-- One line explanation before showing code
-- Ask one question at a time via AskUserQuestion
-
-## Rules
-- No auto git commit/push — only when explicitly asked
-- No unrequested refactoring — stay within scope
-- No guessing — always ask when ambiguous
-
-## Environment
-- MCP servers: edit ~/dotfiles/mcp/servers.json → run ./mcp/apply.sh
-- New skills: add to ~/dotfiles/skills/ (auto-synced to Claude Code, Codex, Cursor)
+...
 ```
 
-### 3. Set Up MCP Secrets
+### 3. Set Up MCP
+
+Edit `mcp/servers.json` to define which MCP servers you want, then fill in your actual tokens in `mcp/secrets.json`:
 
 ```bash
 cp mcp/secrets.json.example mcp/secrets.json
-# Edit mcp/secrets.json with your actual tokens
+# Open mcp/secrets.json and fill in your tokens manually
 ```
+
+> For the MCP servers themselves (Slack, Notion, Dooray, etc.), connect them through each agent's own settings UI or follow each service's setup guide.
 
 ### 4. Run Setup
 
@@ -90,20 +79,29 @@ cp mcp/secrets.json.example mcp/secrets.json
 cd ~/dotfiles && ./setup.sh
 ```
 
-Symlinks are created. MCP config is deployed to all agents.
+Symlinks are created. MCP config is deployed to all agents automatically.
 
 ### 5. Install Claude Code Plugins (optional)
 
 ```bash
 claude plugin install superpowers@claude-plugins-official
-claude plugin install clarify@team-attention-plugins
 ```
+
+### 6. Save to Your Private GitHub Repo
+
+Keep your personal dotfiles in a private repo so you can sync across machines. Open Claude Code or Codex and say:
+
+> "Create a private GitHub repo called `dotfiles` and push `~/dotfiles` to it."
+
+---
+
+Once all steps are done, **Claude Code, Codex CLI, and Cursor will share the exact same rules, skills, and commands** — no matter which agent you use or which machine you're on.
 
 ---
 
 ## Adding Skills
 
-Skills are shared across Claude Code, Codex CLI, and Cursor automatically.
+Skills are shared across all agents automatically.
 
 ```bash
 mkdir ~/dotfiles/skills/my-skill
@@ -122,11 +120,11 @@ git add . && git commit -m "feat: add my-skill" && git push
 ## Adding MCP Servers
 
 ```bash
-# 1. Add server to mcp/servers.json
+# 1. Add server definition to mcp/servers.json
 # 2. Add tokens to mcp/secrets.json
-# 3. Apply
+# 3. Apply to all agents
 ./mcp/apply.sh
-# 4. Commit servers.json (not secrets.json)
+# 4. Commit structure only (never commit secrets.json)
 git add mcp/servers.json && git commit -m "feat: add new MCP server"
 ```
 
