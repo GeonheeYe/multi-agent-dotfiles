@@ -1,0 +1,13 @@
+{
+  "mcpServers": {
+    "dooray": {
+      "type": "stdio",
+      "command": "node",
+      "args": ["${DOORAY_MCP_PATH}"],
+      "env": {
+        "DOORAY_API_TOKEN": "${DOORAY_API_TOKEN}",
+        "DOORAY_TENANT_URL": "${DOORAY_TENANT_URL}"
+      }
+    }
+  }
+}
