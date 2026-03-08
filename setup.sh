@@ -1,21 +1,17 @@
 #!/bin/bash
-# dotfiles setup.sh — 최초 1회 실행하면 모든 symlink 생성
+# setup.sh — Run once on a new machine to create all symlinks
 set -e
 
 DOTFILES="$HOME/dotfiles"
 
-echo "=== dotfiles setup 시작 ==="
-
-# --- plugins ---
-rm -rf ~/.claude/plugins
-ln -s "$DOTFILES/claude_plugins" ~/.claude/plugins && echo "✓ ~/.claude/plugins"
+echo "=== dotfiles setup ==="
 
 # --- skills ---
 backup_and_link() {
   local target="$1"
   local link="$2"
   if [ -e "$link" ] && [ ! -L "$link" ]; then
-    echo "백업: $link → $link.bak"
+    echo "backup: $link → $link.bak"
     mv "$link" "$link.bak"
   fi
   ln -sf "$target" "$link" && echo "✓ $link"
@@ -48,8 +44,8 @@ backup_and_link "$DOTFILES/rules/base.md" "$HOME/.cursor/rules/base.mdc"
 if [ -f "$DOTFILES/mcp/secrets.json" ]; then
   "$DOTFILES/mcp/apply.sh"
 else
-  echo "⚠ mcp/secrets.json 없음 — MCP 설정 건너뜀"
+  echo "⚠ mcp/secrets.json not found — skipping MCP setup"
 fi
 
 echo ""
-echo "=== setup 완료 ==="
+echo "=== setup complete ==="
