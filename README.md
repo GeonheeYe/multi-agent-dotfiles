@@ -83,6 +83,39 @@ cp mcp/secrets.json.example mcp/secrets.json
 
 > For MCP servers (Slack, Notion, etc.), connect them through each agent's own settings UI or follow each service's setup guide.
 
+#### Dooray MCP
+
+This dotfiles template includes a ready-to-use Dooray MCP configuration in `mcp/servers.json`. To connect Dooray:
+
+**1. Clone and build the Dooray MCP server:**
+
+```bash
+git clone https://github.com/GeonheeYe/dooray-mcp.git ~/dooray-mcp
+cd ~/dooray-mcp
+npm install && npm run build
+```
+
+**2. Fill in `mcp/secrets.json`:**
+
+```json
+{
+  "DOORAY_MCP_PATH": "/Users/yourname/dooray-mcp/dist/index.js",
+  "DOORAY_API_TOKEN": "your-dooray-api-token",
+  "DOORAY_TENANT_URL": "https://your-tenant.dooray.com"
+}
+```
+
+- `DOORAY_API_TOKEN`: Generate from Dooray → My Profile → API Token
+- `DOORAY_TENANT_URL`: Your organization's Dooray URL (e.g. `https://acme.dooray.com`)
+
+**3. Apply the config:**
+
+```bash
+./mcp/apply.sh
+```
+
+Done — your agents can now access Dooray tasks, wikis, messenger, and drive.
+
 ### 5. Run Setup
 
 ```bash
