@@ -136,6 +136,8 @@ memory/
 
 Skills are shared across all agents automatically.
 
+> **Path convention:** Always use `~` or `$HOME` for home directory paths in skills, commands, and scripts — never hardcode absolute paths like `/Users/yourname/` or `/home/yourname/`. This keeps your dotfiles portable across machines and users.
+
 ```bash
 mkdir ~/dotfiles/skills/my-skill
 cat > ~/dotfiles/skills/my-skill/SKILL.md << 'EOF'
