@@ -47,7 +47,7 @@ dotfiles/
 | rules | `~/CLAUDE.md` | `~/AGENTS.md` | `~/.cursor/rules/base.mdc` |
 | skills | `~/.claude/skills/` | `~/.codex/skills/` | `~/.cursor/skills/` |
 | commands | `~/.claude/commands/` | `~/.codex/prompts/` | `~/.cursor/commands/` |
-| MCP | `~/.claude.json` | `~/.codex/config.toml` | — |
+| MCP | `~/.claude.json` | `~/.codex/config.toml` | `~/.cursor/mcp.json` |
 
 ---
 

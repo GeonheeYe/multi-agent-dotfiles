@@ -1,6 +1,6 @@
 #!/bin/bash
 # mcp/apply.sh — secrets.json의 값을 servers.json에 주입해서 각 에이전트에 적용
-# 대상: ~/.claude.json (Claude Code), ~/.codex/config.toml (Codex CLI)
+# 대상: ~/.claude.json (Claude Code), ~/.codex/config.toml (Codex CLI), ~/.cursor/mcp.json (Cursor)
 
 DOTFILES="$(cd "$(dirname "$0")/.." && pwd)"
 SECRETS="$DOTFILES/mcp/secrets.json"
@@ -80,5 +80,19 @@ with open(toml_path, 'w') as f:
     f.write(base_toml + mcp_toml)
 
 print("✓ ~/.codex/config.toml 업데이트 완료")
+
+# --- Cursor: ~/.cursor/mcp.json ---
+cursor_mcp_path = os.path.expanduser('~/.cursor/mcp.json')
+if os.path.exists(os.path.dirname(cursor_mcp_path)):
+    if os.path.exists(cursor_mcp_path):
+        with open(cursor_mcp_path) as f:
+            cursor = json.load(f)
+    else:
+        cursor = {}
+    cursor['mcpServers'] = servers['mcpServers']
+    with open(cursor_mcp_path, 'w') as f:
+        json.dump(cursor, f, indent=2, ensure_ascii=False)
+    print("✓ ~/.cursor/mcp.json 업데이트 완료")
+
 print("  서버:", list(servers['mcpServers'].keys()))
 EOF
