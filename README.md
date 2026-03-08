@@ -96,9 +96,19 @@ Symlinks are created for whichever agents are installed. MCP config is deployed 
 
 ### 5. Install Claude Code Plugins (optional)
 
+Plugins add extra skills to Claude Code. We recommend starting with **superpowers** — it includes essential workflow skills like `brainstorming`, `writing-plans`, `systematic-debugging`, `test-driven-development`, and more. These skills guide Claude through structured workflows so you get consistent, high-quality results on complex tasks.
+
 ```bash
 claude plugin install superpowers@claude-plugins-official
 ```
+
+You can also browse and install other plugins:
+
+```bash
+claude plugin discover
+```
+
+> **Note for Codex users:** After installing Claude Code plugins, run `./setup.sh` again. Plugin skills will be automatically added to Codex as well.
 
 ### 6. Make Your Fork Private & Push
 
