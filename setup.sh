@@ -61,6 +61,8 @@ if [ -d "$HOME/.claude/plugins/cache" ]; then
   find "$HOME/.claude/plugins/cache" -path "*/skills/*/SKILL.md" | while read skill_md; do
     skill_dir=$(dirname "$skill_md")
     skill_name=$(basename "$skill_dir")
+    # skip "skills" to avoid self-referencing symlink
+    [ "$skill_name" = "skills" ] && continue
     target="$DOTFILES/skills/$skill_name"
     if [ ! -e "$target" ]; then
       ln -sf "$skill_dir" "$target" && echo "✓ plugin skill: $skill_name"
