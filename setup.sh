@@ -6,6 +6,18 @@ DOTFILES="$(cd "$(dirname "$0")" && pwd)"
 
 echo "=== dotfiles setup ==="
 
+# Clean up self-referencing circular symlinks (directory pointing to itself)
+for dir in "$DOTFILES/commands" "$DOTFILES/skills"; do
+  dir_name=$(basename "$dir")
+  self_link="$dir/$dir_name"
+  if [ -L "$self_link" ]; then
+    link_target=$(readlink "$self_link")
+    if [ "$link_target" = "$dir" ] || [ "$link_target" = "$(realpath "$dir" 2>/dev/null)" ]; then
+      rm "$self_link" && echo "✓ removed circular symlink: $self_link"
+    fi
+  fi
+done
+
 backup_and_link() {
   local target="$1"
   local link="$2"
