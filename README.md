@@ -53,6 +53,8 @@ dotfiles/
 
 ### 1. Install an agent
 
+> **Windows users:** This setup requires a Unix shell. Install WSL first — open PowerShell as Administrator and run `wsl --install`, then restart and continue inside the WSL terminal.
+
 Install at least one agent, then open it and say:
 
 > "Install git, python3, and gh CLI on my machine if not already installed. Then authenticate gh CLI with GitHub."
