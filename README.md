@@ -1,6 +1,39 @@
 # multi-agent-dotfiles
 
-Shared environment for Claude Code, Codex CLI, and Cursor — managed from a single repo with symlinks.
+[![GitHub stars](https://img.shields.io/github/stars/GeonheeYe/multi-agent-dotfiles?style=flat-square)](https://github.com/GeonheeYe/multi-agent-dotfiles/stargazers)
+[![License: MIT](https://img.shields.io/badge/License-MIT-blue.svg?style=flat-square)](LICENSE)
+
+**One repo. Claude Code, Codex CLI, and Cursor all share the same rules, skills, and commands.**
+
+No more re-configuring each tool separately. Change something once — it applies everywhere.
+
+---
+
+## The Problem
+
+You're using multiple AI coding agents: Claude Code for chat, Codex CLI in the terminal, Cursor in your editor. But each one has its own config files, its own skills directory, its own rules. Every time you add a skill or update a rule, you have to do it three times. On a new machine, you start from scratch.
+
+## The Solution
+
+This repo holds everything in one place. `setup.sh` creates symlinks so each agent reads from the same source. Push a change, pull it on another machine, run `setup.sh` — done.
+
+```
+dotfiles/
+├── rules/base.md    → CLAUDE.md, AGENTS.md, .cursor/rules/base.mdc
+├── skills/          → ~/.claude/skills/, ~/.codex/skills/, ~/.cursor/skills/
+├── commands/        → ~/.claude/commands/, ~/.codex/prompts/, ~/.cursor/commands/
+└── mcp/             → ~/.claude.json, ~/.codex/config.toml, ~/.cursor/mcp.json
+```
+
+---
+
+## Just tell your agent
+
+Already have Claude Code, Codex, or Cursor installed? Just say this:
+
+> "Set up my dotfiles using https://github.com/GeonheeYe/multi-agent-dotfiles as a template. Follow the README."
+
+The agent will handle the rest.
 
 ---
 
@@ -22,50 +55,23 @@ This installs Ubuntu by default. Restart your machine, then follow the rest of t
 
 ---
 
-## Structure
-
-```
-dotfiles/
-├── rules/
-│   └── base.md          # Your identity & rules → CLAUDE.md / AGENTS.md / .cursor/rules/base.mdc
-├── skills/              # SKILL.md-based skills (shared across all agents)
-├── commands/            # Slash command prompts (e.g. /save-q)
-├── memory/              # Personal data — gitignored, never committed
-│   └── questions.json   # Q&A learning records saved via /save-q
-├── mcp/
-│   ├── servers.json     # MCP server definitions (uses ${ENV_VAR} placeholders)
-│   ├── secrets.json     # Your actual tokens — never committed (gitignored)
-│   ├── secrets.json.example
-│   └── apply.sh         # Injects secrets and deploys to each agent
-└── setup.sh             # Run once on a new machine
-```
-
-## Agent Mapping
-
-| Item | Claude Code | Codex CLI | Cursor |
-|------|------------|-----------|--------|
-| rules | `~/CLAUDE.md` | `~/AGENTS.md` | `~/.cursor/rules/base.mdc` |
-| skills | `~/.claude/skills/` | `~/.codex/skills/` | `~/.cursor/skills/` |
-| commands | `~/.claude/commands/` | `~/.codex/prompts/` | `~/.cursor/commands/` |
-| MCP | `~/.claude.json` | `~/.codex/config.toml` | `~/.cursor/mcp.json` |
-
----
-
 ## Quick Start
 
 ### 1. Install an agent
 
-> **Windows users:** This setup requires a Unix shell. Install WSL first — open PowerShell as Administrator and run `wsl --install`, then restart and continue inside the WSL terminal.
-
 Install at least one agent, then open it and say:
 
 > "Install git, python3, and gh CLI on my machine if not already installed. Then authenticate gh CLI with GitHub."
+
+**Verify:** `git --version && gh auth status`
 
 ### 2. Create your private dotfiles repo
 
 Say to your agent:
 
 > "Create a private GitHub repo called `dotfiles` from the `GeonheeYe/multi-agent-dotfiles` template and clone it to `~/dotfiles`."
+
+**Verify:** `ls ~/dotfiles`
 
 ### 3. Fill in `rules/base.md`
 
@@ -90,6 +96,8 @@ cp mcp/secrets.json.example mcp/secrets.json
 cd ~/dotfiles && ./setup.sh
 ```
 
+**Verify:** `ls ~/.claude/skills/ && ls ~/.claude/commands/`
+
 Symlinks are created for whichever agents are installed. MCP config is deployed automatically if `secrets.json` exists.
 
 ### 6. Install Plugins / Skills (optional)
@@ -113,7 +121,7 @@ claude plugin install superpowers@claude-plugins-official
 ./setup.sh   # syncs plugin skills to Codex and Cursor
 ```
 
-To see available skills, type `/` in the chat.
+**Verify:** Type `/` in the chat — you should see skills listed.
 
 #### Codex CLI
 
@@ -125,10 +133,7 @@ Or if Claude Code is not installed:
 
 > "Clone the superpowers skills from `https://github.com/anthropics/claude-plugins-official` and add them to `~/dotfiles/skills/`, then run `~/dotfiles/setup.sh`."
 
-Check available skills after setup:
-```bash
-ls ~/.codex/skills/
-```
+**Verify:** `ls ~/.codex/skills/`
 
 ### 7. Push your changes
 
@@ -139,6 +144,17 @@ cd ~/dotfiles && git add . && git push
 ---
 
 Once all steps are done, **Claude Code, Codex CLI, and Cursor will share the exact same rules, skills, and commands** — no matter which agent you use or which machine you're on.
+
+---
+
+## Agent Mapping
+
+| Item | Claude Code | Codex CLI | Cursor |
+|------|------------|-----------|--------|
+| rules | `~/CLAUDE.md` | `~/AGENTS.md` | `~/.cursor/rules/base.mdc` |
+| skills | `~/.claude/skills/` | `~/.codex/skills/` | `~/.cursor/skills/` |
+| commands | `~/.claude/commands/` | `~/.codex/prompts/` | `~/.cursor/commands/` |
+| MCP | `~/.claude.json` | `~/.codex/config.toml` | `~/.cursor/mcp.json` |
 
 ---
 
@@ -212,3 +228,7 @@ Run this whenever you add new skills. Then restart Cursor.
 ### skills/ and commands/ are empty after setup
 
 The template ships with empty `skills/` and `commands/` directories by design — they're yours to fill. To get started quickly, install the `superpowers` plugin (see Step 6) which adds skills like `brainstorming`, `writing-plans`, and more. After installing, run `./setup.sh` again to sync them.
+
+---
+
+If this saves you time, consider giving it a star ⭐
