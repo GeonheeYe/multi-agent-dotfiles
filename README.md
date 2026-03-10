@@ -88,7 +88,49 @@ cp mcp/secrets.json.example mcp/secrets.json
 # Edit both files with your MCP server config and tokens
 ```
 
-> For MCP servers (Slack, Notion, etc.), connect them through each agent's own settings UI or follow each service's setup guide.
+The example files ship with a working **Notion local/stdIO** example using the official open-source package:
+
+- Docs: https://developers.notion.com/docs/mcp
+- Repo: https://github.com/makenotion/notion-mcp-server
+
+How to configure the Notion example:
+
+1. Create a Notion integration and copy its internal integration token (`ntn_...`).
+2. Put that token in `mcp/secrets.json` as `NOTION_TOKEN`.
+3. Keep the example `mcp/servers.json` entry as-is, or rename `notionApi` if you prefer a different server name.
+4. Run `./mcp/apply.sh` to write the MCP config to each installed agent.
+5. Restart the agent if it was already open.
+
+Example:
+
+```jsonc
+// mcp/servers.json
+{
+  "mcpServers": {
+    "notionApi": {
+      "type": "stdio",
+      "command": "npx",
+      "args": ["-y", "@notionhq/notion-mcp-server"],
+      "env": {
+        "NOTION_TOKEN": "${NOTION_TOKEN}"
+      }
+    }
+  }
+}
+```
+
+```jsonc
+// mcp/secrets.json
+{
+  "NOTION_TOKEN": "ntn_your-notion-integration-token"
+}
+```
+
+Notes:
+
+- This template uses the local `stdio` server because it can be applied consistently to Codex CLI, Claude Code, and Cursor from one repo.
+- Notion also provides a hosted MCP flow via OAuth. If you prefer that route, follow the docs above and adapt your agent-specific config as needed.
+- `mcp/secrets.json.example` includes docs/repo links as reference only; they are not used by `apply.sh`.
 
 ### 5. Run Setup
 
@@ -203,6 +245,28 @@ git add . && git commit -m "feat: add my-skill" && git push
 # 4. Commit structure only (never commit secrets.json)
 git add mcp/servers.json && git commit -m "feat: add new MCP server"
 ```
+
+If you are adding Notion, the minimal local example is:
+
+```json
+{
+  "mcpServers": {
+    "notionApi": {
+      "type": "stdio",
+      "command": "npx",
+      "args": ["-y", "@notionhq/notion-mcp-server"],
+      "env": {
+        "NOTION_TOKEN": "${NOTION_TOKEN}"
+      }
+    }
+  }
+}
+```
+
+Reference:
+
+- Notion MCP docs: https://developers.notion.com/docs/mcp
+- Official Notion MCP server: https://github.com/makenotion/notion-mcp-server
 
 ## Syncing Across Machines
 
