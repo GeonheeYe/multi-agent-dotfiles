@@ -28,6 +28,18 @@ backup_and_link() {
   ln -sf "$target" "$link" && echo "✓ $link"
 }
 
+preserve_codex_system_skills() {
+  local source_dir="$HOME/.codex/skills/.system"
+  local target_dir="$DOTFILES/skills/.system"
+  if [ -d "$source_dir" ] && [ ! -e "$target_dir" ]; then
+    mkdir -p "$DOTFILES/skills"
+    cp -a "$source_dir" "$target_dir"
+    echo "✓ preserved Codex system skills in dotfiles"
+  fi
+}
+
+preserve_codex_system_skills
+
 # --- skills ---
 if [ -d "$HOME/.claude" ]; then
   rm -rf ~/.claude/skills

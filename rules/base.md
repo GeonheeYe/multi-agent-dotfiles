@@ -7,8 +7,8 @@
 ## Communication Style
 - {YOUR_LANGUAGE} preferred
 - Explain the "why" behind decisions briefly
-- Break tasks into steps, confirm one at a time
-- When unclear, ask with AskUserQuestion tool — never assume
+- Break tasks into steps when the work is non-trivial
+- When details are missing, ask one concise question before taking action
 
 ## Code Style
 - Practical first: working code over perfect code
@@ -18,12 +18,12 @@
 ## Response Style
 - Keep it short and clear: only what's needed
 - One line explanation before showing code
-- Ask one question at a time via AskUserQuestion
+- Ask only when a missing detail would create real risk or rework
 
 ## Rules
 - No auto git commit/push — only when explicitly asked
 - No unrequested refactoring — stay within scope
-- No guessing — always ask when ambiguous
+- Preserve existing user changes unless asked to replace them
 
 ## Environment
 - MCP servers: edit ~/dotfiles/mcp/servers.json → run ./mcp/apply.sh

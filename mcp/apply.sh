@@ -16,7 +16,7 @@ fi
 echo "MCP 설정 적용 중..."
 
 python3 - <<EOF
-import json, re
+import json, os, re
 
 with open('$SECRETS') as f:
     secrets = json.load(f)
@@ -31,18 +31,17 @@ for key, val in secrets.items():
 servers = json.loads(servers_str)
 
 # --- Claude Code: ~/.claude.json ---
-with open('$CLAUDE_JSON') as f:
-    claude = json.load(f)
-
-claude['mcpServers'] = servers['mcpServers']
-
-with open('$CLAUDE_JSON', 'w') as f:
-    json.dump(claude, f, indent=2, ensure_ascii=False)
-
-print("✓ ~/.claude.json 업데이트 완료")
+if os.path.exists('$CLAUDE_JSON'):
+    with open('$CLAUDE_JSON') as f:
+        claude = json.load(f)
+    claude['mcpServers'] = servers['mcpServers']
+    with open('$CLAUDE_JSON', 'w') as f:
+        json.dump(claude, f, indent=2, ensure_ascii=False)
+    print("✓ ~/.claude.json 업데이트 완료")
+else:
+    print("↷ ~/.claude.json 없음 — Claude Code는 건너뜀")
 
 # --- Codex CLI: ~/.codex/config.toml ---
-import os
 
 # 기존 config.toml 읽기 (mcp_servers 섹션만 교체)
 toml_path = '$CODEX_TOML'
