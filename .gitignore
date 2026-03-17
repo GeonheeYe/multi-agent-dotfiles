@@ -2,3 +2,4 @@ mcp/secrets.json
 mcp/servers.json
 .DS_Store
 memory/
+meeting_tools/.env

@@ -101,5 +101,51 @@ else
   echo "⚠ mcp/secrets.json not found — skipping MCP setup"
 fi
 
+# --- shell aliases (auto-pull dotfiles on claude/codex startup) ---
+SOURCE_LINE="source \"$DOTFILES/shell/aliases.sh\""
+if [ -n "$ZSH_VERSION" ] || [ "$(basename "$SHELL")" = "zsh" ]; then
+  SHELL_RC="$HOME/.zshrc"
+else
+  SHELL_RC="$HOME/.bashrc"
+fi
+if [ -f "$SHELL_RC" ] && ! grep -qF "aliases.sh" "$SHELL_RC"; then
+  echo "" >> "$SHELL_RC"
+  echo "# dotfiles aliases" >> "$SHELL_RC"
+  echo "$SOURCE_LINE" >> "$SHELL_RC"
+  echo "✓ added aliases.sh source to $SHELL_RC"
+else
+  echo "✓ shell aliases already configured"
+fi
+
+# --- Claude SessionStart hook (auto-pull dotfiles) ---
+CLAUDE_SETTINGS="$HOME/.claude/settings.json"
+if [ -f "$CLAUDE_SETTINGS" ] && ! grep -qF "ff-only" "$CLAUDE_SETTINGS"; then
+  python3 - <<'PYEOF'
+import json, os
+
+settings_path = os.path.expanduser("~/.claude/settings.json")
+dotfiles = os.path.expanduser("~/dotfiles")
+
+with open(settings_path) as f:
+    s = json.load(f)
+
+pull_hook = {"type": "command", "command": f"git -C {dotfiles} pull --ff-only --quiet 2>/dev/null || true"}
+hooks = s.setdefault("hooks", {})
+session_start = hooks.setdefault("SessionStart", [{"hooks": []}])
+existing = session_start[0]["hooks"]
+
+if not any("ff-only" in h.get("command", "") for h in existing):
+    existing.insert(0, pull_hook)
+
+with open(settings_path, "w") as f:
+    json.dump(s, f, indent=2, ensure_ascii=False)
+    f.write("\n")
+
+print("✓ Claude SessionStart hook added")
+PYEOF
+else
+  echo "✓ Claude SessionStart hook already configured"
+fi
+
 echo ""
 echo "=== setup complete ==="
