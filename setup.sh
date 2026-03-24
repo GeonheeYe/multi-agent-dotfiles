@@ -40,6 +40,16 @@ preserve_codex_system_skills() {
 
 preserve_codex_system_skills
 
+# --- Ensure scripts are executable ---
+chmod +x "$DOTFILES/scripts/"*.sh 2>/dev/null || true
+
+# --- Validate .gitignore includes secrets ---
+if [ -f "$DOTFILES/.gitignore" ]; then
+  if ! grep -qF "mcp/secrets.json" "$DOTFILES/.gitignore"; then
+    echo "WARNING: .gitignore does not include mcp/secrets.json — secrets may be committed!"
+  fi
+fi
+
 # --- skills ---
 if [ -d "$HOME/.claude" ]; then
   rm -rf ~/.claude/skills
@@ -52,7 +62,7 @@ if [ -d "$HOME/.codex" ]; then
 fi
 
 if [ -d "$HOME/.cursor" ]; then
-  ln -sf "$DOTFILES/skills" ~/.cursor/skills && echo "✓ ~/.cursor/skills"
+  ln -sfn "$DOTFILES/skills" ~/.cursor/skills && echo "✓ ~/.cursor/skills"
 fi
 
 # --- commands ---
@@ -62,11 +72,11 @@ if [ -d "$HOME/.claude" ]; then
 fi
 
 if [ -d "$HOME/.codex" ]; then
-  ln -sf "$DOTFILES/commands" ~/.codex/prompts && echo "✓ ~/.codex/prompts"
+  ln -sfn "$DOTFILES/commands" ~/.codex/prompts && echo "✓ ~/.codex/prompts"
 fi
 
 if [ -d "$HOME/.cursor" ]; then
-  ln -sf "$DOTFILES/commands" ~/.cursor/commands && echo "✓ ~/.cursor/commands"
+  ln -sfn "$DOTFILES/commands" ~/.cursor/commands && echo "✓ ~/.cursor/commands"
 fi
 
 # --- rules ---
@@ -78,7 +88,7 @@ if [ -d "$HOME/.cursor" ]; then
   backup_and_link "$DOTFILES/rules/base.md" "$HOME/.cursor/rules/base.mdc"
 fi
 
-# --- sync Claude Code plugin skills to dotfiles/skills ---
+# --- Sync Claude Code plugin skills to dotfiles/skills ---
 # Makes plugin skills (e.g. superpowers/brainstorming) available in Codex and Cursor too
 if [ -d "$HOME/.claude/plugins/cache" ]; then
   echo "Syncing plugin skills..."
@@ -98,10 +108,10 @@ fi
 if [ -f "$DOTFILES/mcp/secrets.json" ]; then
   "$DOTFILES/mcp/apply.sh"
 else
-  echo "⚠ mcp/secrets.json not found — skipping MCP setup"
+  echo "⚠ mcp/secrets.json not found — skipping MCP setup (copy secrets.json.example to secrets.json)"
 fi
 
-# --- shell aliases (auto-pull dotfiles on claude/codex startup) ---
+# --- shell aliases (auto-sync dotfiles on claude/codex/cursor startup) ---
 SOURCE_LINE="source \"$DOTFILES/shell/aliases.sh\""
 if [ -n "$ZSH_VERSION" ] || [ "$(basename "$SHELL")" = "zsh" ]; then
   SHELL_RC="$HOME/.zshrc"
@@ -117,34 +127,43 @@ else
   echo "✓ shell aliases already configured"
 fi
 
-# --- Claude SessionStart hook (auto-pull dotfiles) ---
+# --- Claude SessionStart hook (auto-sync dotfiles via sync-dotfiles.sh) ---
 CLAUDE_SETTINGS="$HOME/.claude/settings.json"
-if [ -f "$CLAUDE_SETTINGS" ] && ! grep -qF "ff-only" "$CLAUDE_SETTINGS"; then
+if [ -f "$CLAUDE_SETTINGS" ]; then
   python3 - <<'PYEOF'
 import json, os
 
 settings_path = os.path.expanduser("~/.claude/settings.json")
 dotfiles = os.path.expanduser("~/dotfiles")
+sync_script = f"{dotfiles}/scripts/sync-dotfiles.sh"
 
 with open(settings_path) as f:
     s = json.load(f)
 
-pull_hook = {"type": "command", "command": f"git -C {dotfiles} pull --ff-only --quiet 2>/dev/null || true"}
+pull_hook = {"type": "command", "command": f"{sync_script} >/dev/null 2>&1 || true"}
 hooks = s.setdefault("hooks", {})
 session_start = hooks.setdefault("SessionStart", [{"hooks": []}])
 existing = session_start[0]["hooks"]
 
-if not any("ff-only" in h.get("command", "") for h in existing):
+# Remove old git -C based hooks (migration from previous versions)
+existing = [
+    h for h in existing
+    if "git -C" not in h.get("command", "") or "dotfiles" not in h.get("command", "")
+]
+# Add sync-dotfiles.sh hook if not already present
+if not any(sync_script in h.get("command", "") for h in existing):
     existing.insert(0, pull_hook)
+
+session_start[0]["hooks"] = existing
 
 with open(settings_path, "w") as f:
     json.dump(s, f, indent=2, ensure_ascii=False)
     f.write("\n")
 
-print("✓ Claude SessionStart hook added")
+print("✓ Claude SessionStart hook configured (sync-dotfiles.sh)")
 PYEOF
 else
-  echo "✓ Claude SessionStart hook already configured"
+  echo "✓ Claude settings not found — skipping SessionStart hook"
 fi
 
 echo ""
