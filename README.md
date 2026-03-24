@@ -1,21 +1,50 @@
 # multi-agent-dotfiles
 
-[![GitHub stars](https://img.shields.io/github/stars/GeonheeYe/multi-agent-dotfiles?style=flat-square)](https://github.com/GeonheeYe/multi-agent-dotfiles/stargazers)
-[![License: MIT](https://img.shields.io/badge/License-MIT-blue.svg?style=flat-square)](LICENSE)
-
-**One repo. Claude Code, Codex CLI, and Cursor all share the same rules, skills, and commands.**
+**One repo. Claude Code, Codex CLI, and Cursor all share the same rules, skills, commands, and MCP config.**
 
 No more re-configuring each tool separately. Change something once — it applies everywhere.
 
 ---
 
-## The Problem
+## Just Tell Your Agent
 
-You're using multiple AI coding agents: Claude Code for chat, Codex CLI in the terminal, Cursor in your editor. But each one has its own config files, its own skills directory, its own rules. Every time you add a skill or update a rule, you have to do it three times. On a new machine, you start from scratch.
+Already have Claude Code, Codex, or Cursor installed? Just say:
 
-## The Solution
+> "Set up my dotfiles using https://github.com/GeonheeYe/multi-agent-dotfiles as a template. Follow the README."
 
-This repo holds everything in one place. `setup.sh` creates symlinks so each agent reads from the same source. Push a change, pull it on another machine, run `setup.sh` — done.
+The agent will handle the rest.
+
+---
+
+## Prerequisites
+
+- **git**
+- **node** >= 18
+- **python3**
+- At least one agent installed: [Claude Code](https://claude.ai/code) · [Codex CLI](https://github.com/openai/codex) · [Cursor](https://cursor.com)
+- **Windows users:** WSL required (`wsl --install` in PowerShell as Administrator)
+
+## Quick Setup
+
+```bash
+git clone https://github.com/GeonheeYe/multi-agent-dotfiles.git ~/dotfiles
+cd ~/dotfiles
+cp mcp/secrets.json.example mcp/secrets.json
+# Edit mcp/secrets.json with your API tokens
+./setup.sh
+```
+
+That's it. `setup.sh` handles everything:
+
+- Creates symlinks for all three agents (skills, commands, rules)
+- Syncs Claude Code plugin skills to dotfiles (available in Codex/Cursor too)
+- Deploys MCP server config to each agent
+- Registers SessionStart hook for auto-sync on every session
+- Adds shell aliases to `.zshrc` / `.bashrc`
+
+---
+
+## What Gets Linked
 
 ```
 dotfiles/
@@ -25,83 +54,106 @@ dotfiles/
 └── mcp/             → ~/.claude.json, ~/.codex/config.toml, ~/.cursor/mcp.json
 ```
 
----
-
-## Just tell your agent
-
-Already have Claude Code, Codex, or Cursor installed? Just say this:
-
-> "Set up my dotfiles using https://github.com/GeonheeYe/multi-agent-dotfiles as a template. Follow the README."
-
-The agent will handle the rest.
+| Item | Claude Code | Codex CLI | Cursor |
+|------|------------|-----------|--------|
+| Rules | `~/CLAUDE.md` | `~/AGENTS.md` | `~/.cursor/rules/base.mdc` |
+| Skills | `~/.claude/skills/` | `~/.codex/skills/` | `~/.cursor/skills/` |
+| Commands | `~/.claude/commands/` | `~/.codex/prompts/` | `~/.cursor/commands/` |
+| MCP | `~/.claude.json` | `~/.codex/config.toml` | `~/.cursor/mcp.json` |
 
 ---
 
-## Requirements
+## Included Skills (18)
 
-- A [GitHub account](https://github.com/signup)
-- At least one agent installed: [Claude Code](https://claude.ai/code) · [Codex CLI](https://github.com/openai/codex) · [Cursor](https://cursor.com)
-- **Linux or macOS** — Windows users must use WSL (see below)
+These skills are ready to use out of the box:
 
-### Windows: Install WSL
-
-Open PowerShell as Administrator and run:
-
-```powershell
-wsl --install
-```
-
-This installs Ubuntu by default. Restart your machine, then follow the rest of this guide inside the WSL terminal.
+| Skill | Description |
+|-------|-------------|
+| brainstorming | Turn ideas into fully formed designs through collaborative dialogue |
+| writing-plans | Create detailed, step-by-step implementation plans |
+| writing-skills | Guide for creating and testing new skills |
+| executing-plans | Execute implementation plans with review checkpoints |
+| subagent-driven-development | Parallelize implementation with independent subagents |
+| dispatching-parallel-agents | Coordinate 2+ independent tasks in parallel |
+| test-driven-development | Red-green-refactor TDD workflow |
+| systematic-debugging | Root cause analysis with structured debugging |
+| using-git-worktrees | Isolated feature work with git worktrees |
+| finishing-a-development-branch | Merge, PR, or cleanup when implementation is done |
+| requesting-code-review | Structure and submit code for review |
+| receiving-code-review | Handle review feedback with technical rigor |
+| verification-before-completion | Run verification before claiming work is done |
+| find-skills | Discover and install new skills |
+| using-superpowers | Guide for using plugin skills effectively |
+| unknown | Surface hidden assumptions with Known/Unknown 4-quadrant analysis |
+| vague | Turn ambiguous requirements into concrete specs |
+| metamedium | Reframe problems by changing form, not just content |
 
 ---
 
-## Quick Start
+## Shell Aliases
 
-### 1. Install an agent
+After setup, these aliases are available in your terminal:
 
-Install at least one agent, then open it and say:
+| Alias | Description |
+|-------|-------------|
+| `cc` | Claude Code (auto-sync dotfiles before/after) |
+| `ccd` | Claude Code (skip permission checks) |
+| `ccr` | Claude Code (resume previous session) |
+| `cdd` | Codex CLI (bypass approvals and sandbox) |
+| `cu` | Cursor CLI |
 
-> "Install git, python3, and gh CLI on my machine if not already installed. Then authenticate gh CLI with GitHub."
+Each alias automatically pulls latest dotfiles before running and pushes changes after.
 
-**Verify:** `git --version && gh auth status`
+---
 
-### 2. Create your private dotfiles repo
+## Auto-Sync
 
-Say to your agent:
+Your dotfiles stay in sync automatically:
 
-> "Create a private GitHub repo called `dotfiles` from the `GeonheeYe/multi-agent-dotfiles` template and clone it to `~/dotfiles`."
+- **On session start:** Claude Code's SessionStart hook runs `sync-dotfiles.sh` (pulls latest changes)
+- **On alias use:** `cc` / `ccd` / `ccr` / `cdd` / `cu` pull before and push after each session
+- **`scripts/sync-dotfiles.sh`:** auto-commit local changes + `pull --rebase` + re-run setup if HEAD changed
+- **`scripts/push-dotfiles.sh`:** auto-commit + `pull --rebase` + push to remote
 
-**Verify:** `ls ~/dotfiles`
-
-### 3. Fill in `rules/base.md`
-
-This file becomes your `CLAUDE.md`, `AGENTS.md`, and Cursor rules — all in one. Say:
-
-> "Fill in `~/dotfiles/rules/base.md` with my personal info. Ask me one question at a time."
-
-### 4. Set Up MCP (optional)
+### Syncing across machines
 
 ```bash
 cd ~/dotfiles
-cp mcp/servers.json.example mcp/servers.json
-cp mcp/secrets.json.example mcp/secrets.json
-# Edit both files with your MCP server config and tokens
+git pull && ./setup.sh    # only needed if setup.sh itself changed
 ```
 
-The example files ship with a working **Notion local/stdIO** example using the official open-source package:
+---
 
-- Docs: https://developers.notion.com/docs/mcp
-- Repo: https://github.com/makenotion/notion-mcp-server
+## Customization
 
-How to configure the Notion example:
+### Fill in your rules
 
-1. Create a Notion integration and copy its internal integration token (`ntn_...`).
-2. Put that token in `mcp/secrets.json` as `NOTION_TOKEN`.
-3. Keep the example `mcp/servers.json` entry as-is, or rename `notionApi` if you prefer a different server name.
-4. Run `./mcp/apply.sh` to write the MCP config to each installed agent.
-5. Restart the agent if it was already open.
+Edit `rules/base.md` with your personal info — it becomes your `CLAUDE.md`, `AGENTS.md`, and Cursor rules all at once.
 
-Example:
+### Add a skill
+
+Create `skills/my-skill/SKILL.md` — instantly available in all three agents.
+
+```bash
+mkdir ~/dotfiles/skills/my-skill
+cat > ~/dotfiles/skills/my-skill/SKILL.md << 'EOF'
+---
+name: my-skill
+description: What this skill does
+---
+
+Skill instructions here.
+EOF
+```
+
+### Add an MCP server
+
+1. Copy `mcp/servers.json.example` to `mcp/servers.json` (if not already done)
+2. Add your server definition to `mcp/servers.json`
+3. Add tokens to `mcp/secrets.json`
+4. Run `./mcp/apply.sh`
+
+The example ships with a **Notion MCP** configuration:
 
 ```jsonc
 // mcp/servers.json
@@ -119,180 +171,41 @@ Example:
 }
 ```
 
-```jsonc
-// mcp/secrets.json
-{
-  "NOTION_TOKEN": "ntn_your-notion-integration-token"
-}
-```
+References:
+- Notion MCP docs: https://developers.notion.com/docs/mcp
+- Official server: https://github.com/makenotion/notion-mcp-server
 
-Notes:
+### Install more skills via plugins
 
-- This template uses the local `stdio` server because it can be applied consistently to Codex CLI, Claude Code, and Cursor from one repo.
-- Notion also provides a hosted MCP flow via OAuth. If you prefer that route, follow the docs above and adapt your agent-specific config as needed.
-- `mcp/secrets.json.example` includes docs/repo links as reference only; they are not used by `apply.sh`.
+Claude Code's plugin system can add more skills:
 
-### 5. Run Setup
-
-```bash
-cd ~/dotfiles && ./setup.sh
-```
-
-**Verify:** `ls ~/.claude/skills/ && ls ~/.claude/commands/`
-
-Symlinks are created for whichever agents are installed. MCP config is deployed automatically if `secrets.json` exists.
-
-### 6. Install Plugins / Skills (optional)
-
-> **What is `superpowers`?**
-> A plugin that adds structured workflow skills — `brainstorming`, `writing-plans`, `systematic-debugging`, `test-driven-development`, and more. These guide the agent through consistent, step-by-step processes. Highly recommended.
-
-#### Claude Code
-
-Claude Code manages skills through its plugin system.
-
-**Option 1 — Natural language:**
-> "Install the superpowers plugin, then run `~/dotfiles/setup.sh`."
-
-**Option 2 — `/plugin` command:**
-Type `/plugin` in the chat to open the plugin browser and install from the marketplace.
-
-**Option 3 — CLI:**
 ```bash
 claude plugin install superpowers@claude-plugins-official
 ./setup.sh   # syncs plugin skills to Codex and Cursor
 ```
 
-**Verify:** Type `/` in the chat — you should see skills listed.
-
-#### Codex CLI
-
-Codex CLI has no plugin system, but you can install skills via natural language:
-
-> "Add the superpowers skills to `~/dotfiles/skills/` from `~/.claude/plugins/cache/`, then run `~/dotfiles/setup.sh`."
-
-Or if Claude Code is not installed:
-
-> "Clone the superpowers skills from `https://github.com/anthropics/claude-plugins-official` and add them to `~/dotfiles/skills/`, then run `~/dotfiles/setup.sh`."
-
-**Verify:** `ls ~/.codex/skills/`
-
-### 7. Push your changes
-
-```bash
-cd ~/dotfiles && git add . && git push
-```
-
----
-
-Once all steps are done, **Claude Code, Codex CLI, and Cursor will share the exact same rules, skills, and commands** — no matter which agent you use or which machine you're on.
-
----
-
-## Agent Mapping
-
-| Item | Claude Code | Codex CLI | Cursor |
-|------|------------|-----------|--------|
-| rules | `~/CLAUDE.md` | `~/AGENTS.md` | `~/.cursor/rules/base.mdc` |
-| skills | `~/.claude/skills/` | `~/.codex/skills/` | `~/.cursor/skills/` |
-| commands | `~/.claude/commands/` | `~/.codex/prompts/` | `~/.cursor/commands/` |
-| MCP | `~/.claude.json` | `~/.codex/config.toml` | `~/.cursor/mcp.json` |
-
 ---
 
 ## Memory (Personal, Not Committed)
 
-The `memory/` directory is gitignored — it stores personal data that should not be shared publicly.
-
-The main use case is a **questions bank** (`memory/questions.json`) that saves key Q&A from your sessions for later review. Use the `/save-q` command (in `commands/`) to add entries from any agent.
-
-```
-memory/
-└── questions.json    # Personal Q&A learning records — gitignored
-```
-
-> This directory exists locally on each machine but is never pushed to GitHub. Back it up separately if needed.
-
----
-
-## Adding Skills
-
-Skills are shared across all agents automatically.
-
-> **Path convention:** Always use `~` or `$HOME` for home directory paths in skills, commands, and scripts — never hardcode absolute paths like `/Users/yourname/` or `/home/yourname/`. This keeps your dotfiles portable across machines and users.
-
-```bash
-mkdir ~/dotfiles/skills/my-skill
-cat > ~/dotfiles/skills/my-skill/SKILL.md << 'EOF'
----
-name: my-skill
-description: What this skill does
----
-
-Skill instructions here.
-EOF
-
-git add . && git commit -m "feat: add my-skill" && git push
-```
-
-## Adding MCP Servers
-
-```bash
-# 1. Add server definition to mcp/servers.json
-# 2. Add tokens to mcp/secrets.json
-# 3. Apply to all agents
-./mcp/apply.sh
-# 4. Commit structure only (never commit secrets.json)
-git add mcp/servers.json && git commit -m "feat: add new MCP server"
-```
-
-If you are adding Notion, the minimal local example is:
-
-```json
-{
-  "mcpServers": {
-    "notionApi": {
-      "type": "stdio",
-      "command": "npx",
-      "args": ["-y", "@notionhq/notion-mcp-server"],
-      "env": {
-        "NOTION_TOKEN": "${NOTION_TOKEN}"
-      }
-    }
-  }
-}
-```
-
-Reference:
-
-- Notion MCP docs: https://developers.notion.com/docs/mcp
-- Official Notion MCP server: https://github.com/makenotion/notion-mcp-server
-
-## Syncing Across Machines
-
-```bash
-git pull
-./mcp/apply.sh   # only if MCP config changed
-```
+The `memory/` directory is gitignored — use it for personal data that shouldn't be shared.
 
 ---
 
 ## Troubleshooting
 
-### Skills not showing in Cursor
-
-Cursor has a known bug where it may not follow symlinks to discover skills. If your skills don't appear in Cursor, copy them manually instead:
-
-```bash
-rsync -av ~/dotfiles/skills/ ~/.cursor/skills/
-```
-
-Run this whenever you add new skills. Then restart Cursor.
-
-### skills/ and commands/ are empty after setup
-
-The template ships with empty `skills/` and `commands/` directories by design — they're yours to fill. To get started quickly, install the `superpowers` plugin (see Step 6) which adds skills like `brainstorming`, `writing-plans`, and more. After installing, run `./setup.sh` again to sync them.
+- **Windows:** WSL required. Run `wsl --install` in PowerShell as Administrator.
+- **Cursor skills not showing:** Cursor may not follow symlinks. Copy manually: `rsync -av ~/dotfiles/skills/ ~/.cursor/skills/`
+- **Paths:** Always use `~` or `$HOME`, never hardcode absolute paths.
+- **MCP not working:** Check that `mcp/secrets.json` exists and has valid tokens.
+- **SessionStart hook not firing:** Re-run `./setup.sh` to register the hook.
 
 ---
 
-If this saves you time, consider giving it a star ⭐
+## License
+
+MIT
+
+---
+
+If this saves you time, consider giving it a star.
