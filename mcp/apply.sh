@@ -1,6 +1,6 @@
 #!/bin/bash
-# mcp/apply.sh — secrets.json의 값을 servers.json에 주입해서 각 에이전트에 적용
-# 대상: ~/.claude.json (Claude Code), ~/.codex/config.toml (Codex CLI), ~/.cursor/mcp.json (Cursor)
+# mcp/apply.sh — Inject secrets.json values into servers.json and deploy to each agent
+# Targets: ~/.claude.json (Claude Code), ~/.codex/config.toml (Codex CLI), ~/.cursor/mcp.json (Cursor)
 
 DOTFILES="$(cd "$(dirname "$0")/.." && pwd)"
 SECRETS="$DOTFILES/mcp/secrets.json"
@@ -9,11 +9,11 @@ CLAUDE_JSON="$HOME/.claude.json"
 CODEX_TOML="$HOME/.codex/config.toml"
 
 if [ ! -f "$SECRETS" ]; then
-  echo "❌ mcp/secrets.json 없음 — secrets.json.example 참고해서 만들어주세요"
+  echo "ERROR: mcp/secrets.json not found — copy secrets.json.example and fill in your tokens"
   exit 1
 fi
 
-echo "MCP 설정 적용 중..."
+echo "Applying MCP configuration..."
 
 python3 - <<EOF
 import json, os, re
@@ -24,7 +24,7 @@ with open('$SECRETS') as f:
 with open('$SERVERS') as f:
     servers_str = f.read()
 
-# \${VAR} 치환
+# Replace \${VAR} placeholders with secret values
 for key, val in secrets.items():
     servers_str = servers_str.replace('\${' + key + '}', val)
 
@@ -37,18 +37,18 @@ if os.path.exists('$CLAUDE_JSON'):
     claude['mcpServers'] = servers['mcpServers']
     with open('$CLAUDE_JSON', 'w') as f:
         json.dump(claude, f, indent=2, ensure_ascii=False)
-    print("✓ ~/.claude.json 업데이트 완료")
+    print("✓ ~/.claude.json updated")
 else:
-    print("↷ ~/.claude.json 없음 — Claude Code는 건너뜀")
+    print("↷ ~/.claude.json not found — skipping Claude Code")
 
 # --- Codex CLI: ~/.codex/config.toml ---
 
-# 기존 config.toml 읽기 (mcp_servers 섹션만 교체)
+# Read existing config.toml (replace only mcp_servers section)
 toml_path = '$CODEX_TOML'
 if os.path.exists(toml_path):
     with open(toml_path) as f:
         lines = f.readlines()
-    # mcp_servers 섹션 제거
+    # Remove existing mcp_servers section
     new_lines = []
     skip = False
     for line in lines:
@@ -62,7 +62,7 @@ if os.path.exists(toml_path):
 else:
     base_toml = ''
 
-# mcp_servers 섹션 추가
+# Build mcp_servers section
 mcp_toml = ''
 for name, cfg in servers['mcpServers'].items():
     mcp_toml += f'\n[mcp_servers.{name}]\n'
@@ -78,7 +78,7 @@ for name, cfg in servers['mcpServers'].items():
 with open(toml_path, 'w') as f:
     f.write(base_toml + mcp_toml)
 
-print("✓ ~/.codex/config.toml 업데이트 완료")
+print("✓ ~/.codex/config.toml updated")
 
 # --- Cursor: ~/.cursor/mcp.json ---
 cursor_mcp_path = os.path.expanduser('~/.cursor/mcp.json')
@@ -91,7 +91,7 @@ if os.path.exists(os.path.dirname(cursor_mcp_path)):
     cursor['mcpServers'] = servers['mcpServers']
     with open(cursor_mcp_path, 'w') as f:
         json.dump(cursor, f, indent=2, ensure_ascii=False)
-    print("✓ ~/.cursor/mcp.json 업데이트 완료")
+    print("✓ ~/.cursor/mcp.json updated")
 
-print("  서버:", list(servers['mcpServers'].keys()))
+print("  servers:", list(servers['mcpServers'].keys()))
 EOF
