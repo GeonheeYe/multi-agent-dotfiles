@@ -1,0 +1,8 @@
+{
+  "id": "2026-03-20-1418",
+  "keyword": "stdin stdout std",
+  "question": "stdin, stdout에서 std는 무엇의 줄임말인가?",
+  "answer": "std는 standard의 줄임말이다. 따라서 stdin은 standard input, stdout은 standard output, stderr는 standard error를 뜻한다. 이들은 프로그램이 기본적으로 사용하는 입력, 일반 출력, 에러 출력 통로를 가리킨다. 터미널에서는 보통 키보드 입력이 stdin, 일반 결과 출력이 stdout, 에러 메시지가 stderr로 연결된다.",
+  "created_at": "2026-03-20T14:18:10+0900",
+  "last_reviewed": null
+}

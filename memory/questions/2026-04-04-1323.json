@@ -1,0 +1,8 @@
+{
+  "id": "2026-04-04-1323",
+  "keyword": "OAuth URI 개념",
+  "question": "OAuth에서 token_uri가 뭐야?",
+  "answer": "URI는 뭔가를 식별하는 주소 전반을 말한다. token_uri는 구글에서 토큰을 받아오는 서버 주소(https://oauth2.googleapis.com/token)이며, refresh_token을 이 주소로 보내면 구글이 새 access_token을 발급해준다. OAuth는 비밀번호 대신 토큰(임시 열쇠)으로 권한을 위임하는 방식이다.",
+  "created_at": "2026-04-04T13:23:08",
+  "last_reviewed": null
+}

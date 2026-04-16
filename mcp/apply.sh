@@ -1,6 +1,6 @@
 #!/bin/bash
-# mcp/apply.sh — Inject secrets.json values into servers.json and deploy to each agent
-# Targets: ~/.claude.json (Claude Code), ~/.codex/config.toml (Codex CLI), ~/.cursor/mcp.json (Cursor)
+# mcp/apply.sh — secrets.json의 값을 servers.json에 주입해서 각 에이전트에 적용
+# 대상: ~/.claude.json (Claude Code), ~/.codex/config.toml (Codex CLI), ~/.cursor/mcp.json (Cursor)
 
 DOTFILES="$(cd "$(dirname "$0")/.." && pwd)"
 SECRETS="$DOTFILES/mcp/secrets.json"
@@ -9,46 +9,56 @@ CLAUDE_JSON="$HOME/.claude.json"
 CODEX_TOML="$HOME/.codex/config.toml"
 
 if [ ! -f "$SECRETS" ]; then
-  echo "ERROR: mcp/secrets.json not found — copy secrets.json.example and fill in your tokens"
+  echo "❌ mcp/secrets.json 없음 — secrets.json.example 참고해서 만들어주세요"
   exit 1
 fi
 
-echo "Applying MCP configuration..."
+echo "MCP 설정 적용 중..."
 
 python3 - <<EOF
-import json, os, re
+import json
+import os
 
 with open('$SECRETS') as f:
     secrets = json.load(f)
 
+default_dooray_path = os.path.join('$DOTFILES', 'mcp', 'dooray-mcp', 'dist', 'index.js')
+if not secrets.get('DOORAY_MCP_PATH') or not os.path.exists(secrets['DOORAY_MCP_PATH']):
+    secrets['DOORAY_MCP_PATH'] = default_dooray_path
+
 with open('$SERVERS') as f:
     servers_str = f.read()
 
-# Replace \${VAR} placeholders with secret values
+# \${VAR} 치환
 for key, val in secrets.items():
     servers_str = servers_str.replace('\${' + key + '}', val)
 
 servers = json.loads(servers_str)
 
 # --- Claude Code: ~/.claude.json ---
-if os.path.exists('$CLAUDE_JSON'):
-    with open('$CLAUDE_JSON') as f:
+claude_path = '$CLAUDE_JSON'
+if os.path.exists(claude_path):
+    with open(claude_path) as f:
         claude = json.load(f)
-    claude['mcpServers'] = servers['mcpServers']
-    with open('$CLAUDE_JSON', 'w') as f:
-        json.dump(claude, f, indent=2, ensure_ascii=False)
-    print("✓ ~/.claude.json updated")
 else:
-    print("↷ ~/.claude.json not found — skipping Claude Code")
+    claude = {}
+
+claude['mcpServers'] = servers['mcpServers']
+
+with open(claude_path, 'w') as f:
+    json.dump(claude, f, indent=2, ensure_ascii=False)
+
+print("✓ ~/.claude.json 업데이트 완료")
 
 # --- Codex CLI: ~/.codex/config.toml ---
+import os
 
-# Read existing config.toml (replace only mcp_servers section)
+# 기존 config.toml 읽기 (mcp_servers 섹션만 교체)
 toml_path = '$CODEX_TOML'
 if os.path.exists(toml_path):
     with open(toml_path) as f:
         lines = f.readlines()
-    # Remove existing mcp_servers section
+    # mcp_servers 섹션 제거
     new_lines = []
     skip = False
     for line in lines:
@@ -62,23 +72,31 @@ if os.path.exists(toml_path):
 else:
     base_toml = ''
 
-# Build mcp_servers section
+# mcp_servers 섹션 추가
 mcp_toml = ''
+def toml_escape(value):
+    slash = chr(92)
+    quote = chr(34)
+    return value.replace(slash, slash * 2).replace(quote, slash + quote)
+
 for name, cfg in servers['mcpServers'].items():
     mcp_toml += f'\n[mcp_servers.{name}]\n'
-    mcp_toml += f'command = "{cfg["command"]}"\n'
+    if cfg.get('url'):
+        mcp_toml += f'url = "{toml_escape(cfg["url"])}"\n'
+    else:
+        mcp_toml += f'command = "{toml_escape(cfg["command"])}"\n'
     if cfg.get('args'):
-        args_str = ', '.join(f'"{a}"' for a in cfg['args'])
+        args_str = ', '.join(f'"{toml_escape(a)}"' for a in cfg['args'])
         mcp_toml += f'args = [{args_str}]\n'
     if cfg.get('env'):
         mcp_toml += f'\n[mcp_servers.{name}.env]\n'
         for k, v in cfg['env'].items():
-            mcp_toml += f'{k} = "{v}"\n'
+            mcp_toml += f'{k} = "{toml_escape(v)}"\n'
 
 with open(toml_path, 'w') as f:
     f.write(base_toml + mcp_toml)
 
-print("✓ ~/.codex/config.toml updated")
+print("✓ ~/.codex/config.toml 업데이트 완료")
 
 # --- Cursor: ~/.cursor/mcp.json ---
 cursor_mcp_path = os.path.expanduser('~/.cursor/mcp.json')
@@ -91,7 +109,7 @@ if os.path.exists(os.path.dirname(cursor_mcp_path)):
     cursor['mcpServers'] = servers['mcpServers']
     with open(cursor_mcp_path, 'w') as f:
         json.dump(cursor, f, indent=2, ensure_ascii=False)
-    print("✓ ~/.cursor/mcp.json updated")
+    print("✓ ~/.cursor/mcp.json 업데이트 완료")
 
-print("  servers:", list(servers['mcpServers'].keys()))
+print("  서버:", list(servers['mcpServers'].keys()))
 EOF

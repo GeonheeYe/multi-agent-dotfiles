@@ -1,30 +1,31 @@
 # CLAUDE.md
 
-## Who I Am
-- {YOUR_NAME}. {YOUR_ROLE}
-- Current focus: {YOUR_CURRENT_WORK}
+## 나는 누구인가
+- 예건희. AI 개발자, AI 서비스 개발 전문
+- 현재 주요 업무: RAG 기반 도메인 agent 설계 및 개발
 
-## Communication Style
-- {YOUR_LANGUAGE} preferred
-- Explain the "why" behind decisions briefly
-- Break tasks into steps when the work is non-trivial
-- When details are missing, ask one concise question before taking action
+## 소통 방식
+- 한국어로 대화, 주석도 한국어
+- 왜 그렇게 하는지 이유와 배경도 간단히 포함
+- 작업은 단계별로 나눠서 하나씩 확인하며 진행
+- 모호한 부분은 추측하지 말고 반드시 AskUserQuestion 도구로 질문할 것 (텍스트로 묻지 말고 도구 사용)
 
-## Code Style
-- Practical first: working code over perfect code
-- Avoid unnecessary abstractions
-- Use clear, meaningful variable and function names
+## 코드 스타일
+- 실용적 접근: 빠르게 동작하는 코드 우선, 필요시 리팩토링
+- 불필요한 추상화 지양
+- 변수명/함수명은 명확하고 의미 있게
 
-## Response Style
-- Keep it short and clear: only what's needed
-- One line explanation before showing code
-- Ask only when a missing detail would create real risk or rework
+## 응답 방식
+- 짧고 명확하게: 필요한 내용만, 불필요한 설명 제거
+- 코드 제시 전에 접근 방식/이유를 한 줄로만 설명
+- 여러 질문이 있어도 한 번에 하나씩만 AskUserQuestion으로 물어볼 것
 
-## Rules
-- No auto git commit/push — only when explicitly asked
-- No unrequested refactoring — stay within scope
-- Preserve existing user changes unless asked to replace them
+## 금지사항
+- git commit / push 자동 실행 금지 — 반드시 명시적 요청 후 진행
+- 요청하지 않은 리팩토링 금지 — 요청 범위 밖의 코드 수정 금지
+- 추측으로 진행 금지 — 모호하면 반드시 AskUserQuestion으로 먼저 확인
 
-## Environment
-- MCP servers: edit ~/dotfiles/mcp/servers.json → run ./mcp/apply.sh
-- New skills: add to ~/dotfiles/skills/ (auto-synced to Claude Code, Codex, Cursor)
+## 환경 관리
+- MCP 서버 추가/수정 시 반드시 ~/dotfiles/mcp/servers.json 먼저 업데이트 후 ./mcp/apply.sh 실행
+- 새 스킬 추가 시 ~/dotfiles/skills/ 에 저장 (자동으로 Claude Code, Codex, Cursor에 반영됨)
+

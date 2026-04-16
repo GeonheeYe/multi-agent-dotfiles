@@ -1,0 +1,8 @@
+{
+  "id": "2026-03-19-1750",
+  "keyword": "FastAPI response_model",
+  "question": "FastAPI @app.post의 response_model이 뭐야?",
+  "answer": "response_model은 FastAPI 라우트 데코레이터의 선택적 옵션으로, 함수 반환값을 지정한 Pydantic 모델 필드만 골라 JSON으로 변환한다. 없어도 동작하지만 있으면 Swagger(/docs)에 응답 스키마가 자동 표시되고, 반환값 타입 검증 및 민감한 필드 자동 제외 기능이 생긴다. @app.get, @app.put, @app.delete 모두 동일하게 사용 가능하다.",
+  "created_at": "2026-03-19T17:50:00",
+  "last_reviewed": "2026-04-14T00:00:00"
+}

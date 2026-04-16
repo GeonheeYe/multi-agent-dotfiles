@@ -1,0 +1,8 @@
+{
+  "id": "2026-04-01-0956",
+  "keyword": "axios 공급망 공격 ProtonMail",
+  "question": "axios 공급망 공격에서 ProtonMail은 어떤 역할로 등장하는가?",
+  "answer": "2026년 3월 31일 axios 공급망 공격에서 공격자가 메인테이너의 npm 계정을 탈취한 뒤 계정 이메일을 ProtonMail 주소(ifstap@proton.me)로 교체했다. ProtonMail은 스위스 기반 엔드투엔드 암호화 이메일 서비스로 익명 계정 생성이 가능해 공격자들이 신원 추적을 피하려고 악용한다. 감염 버전(axios@1.14.1, @0.30.4)은 가짜 의존성을 통해 RAT를 배포하며, 안전 버전은 @1.14.0과 @0.30.3이다.",
+  "created_at": "2026-04-01T09:56:16",
+  "last_reviewed": null
+}

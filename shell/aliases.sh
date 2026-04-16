@@ -1,9 +1,9 @@
 # dotfiles/shell/aliases.sh
-# Minimal wrapper functions — compatible with both bash and zsh
+# bash/zsh에서 공통으로 source 가능한 최소 래퍼 함수들
 
 DOTFILES="${DOTFILES:-$HOME/dotfiles}"
 
-# OS detection (mac / wsl / linux / unknown)
+# OS 감지 (mac / wsl / linux / unknown)
 _detect_os() {
   case "$(uname -s)" in
     Darwin) echo "mac" ;;
@@ -29,7 +29,7 @@ _dotfiles_push() {
   fi
 }
 
-# Clear any existing aliases that conflict with function definitions
+# 기존 interactive alias가 함수 정의 토큰을 깨뜨리지 않도록 정리
 unalias cc ccd ccr cdd cu 2>/dev/null || true
 
 # Claude Code

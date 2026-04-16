@@ -1,0 +1,11 @@
+# dotfiles/ssh/config
+# 모든 환경에서 공유되는 SSH 호스트 설정
+
+Host geonhee-s20
+    HostName 100.98.206.121
+    Port 8022
+    User u0_a343
+    IdentityFile ~/.ssh/id_ed25519_s20
+    StrictHostKeyChecking no
+    ServerAliveInterval 30
+    ServerAliveCountMax 3

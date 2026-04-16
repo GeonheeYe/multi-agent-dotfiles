@@ -1,0 +1,8 @@
+{
+  "id": "2026-03-21-1327",
+  "keyword": "curl -sS 차이",
+  "question": "curl에서 -sS가 있을 때와 없을 때의 차이를 예시로 보여줘.",
+  "answer": "`-s`(silent)는 진행률·통계 출력을 끄고 응답 본문만 남긴다. `-s`만 쓰면 실패 시에도 터미널에 에러가 거의 안 보일 수 있다. `-S`(show-error)는 `-s`와 함께 쓸 때 연결·HTTP 오류 메시지를 stderr에 남긴다. 성공 시 예: `-sS` 없으면 `% Total` 등 진행 한 줄이 먼저 나오고, 있으면 JSON 본문만 깔끔히 나온다. 실패 시 예: `-s`만이면 빈 출력에 종료코드만, `-sS`면 `curl: (7) Failed to connect...` 같은 이유가 보인다.",
+  "created_at": "2026-03-21T13:27:48",
+  "last_reviewed": null
+}

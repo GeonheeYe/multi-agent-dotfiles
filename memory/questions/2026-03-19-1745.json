@@ -1,0 +1,8 @@
+{
+  "id": "2026-03-19-1745",
+  "keyword": "SQLAlchemy ORM",
+  "question": "SQLAlchemy가 뭐야?",
+  "answer": "SQLAlchemy는 Python에서 DB를 다루는 ORM 라이브러리로, SQL을 직접 쓰지 않고 Python 객체로 DB를 조작할 수 있게 해준다. ORM(Object-Relational Mapping)은 테이블을 클래스로, 컬럼을 필드로 매핑하는 방식이다. FastAPI에서는 Depends(get_db)로 세션을 주입받아 SQLAlchemy로 PostgreSQL을 쿼리한다. 한마디로 Python 코드와 PostgreSQL 사이의 번역기 역할을 한다.",
+  "created_at": "2026-03-19T17:45:00",
+  "last_reviewed": "2026-04-12T07:06:03Z"
+}

@@ -1,0 +1,8 @@
+{
+  "id": "2026-03-23-0910",
+  "keyword": "Playwright 브라우저 자동화",
+  "question": "Playwright는 무엇인가?",
+  "answer": "Playwright는 Microsoft가 만든 브라우저 자동화 라이브러리로, 코드로 브라우저를 조종해 클릭·입력·스크린샷 등을 자동화한다. E2E 테스트, 웹 스크래핑, 반복 작업 자동화에 주로 사용된다. 내부적으로 CDP(Chrome DevTools Protocol)를 통해 브라우저를 제어하며, Selenium 대비 속도와 안정성이 높다. Chrome/Firefox/Safari를 모두 지원한다.",
+  "created_at": "2026-03-23T09:10:00",
+  "last_reviewed": null
+}

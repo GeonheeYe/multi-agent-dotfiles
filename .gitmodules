@@ -1,0 +1,3 @@
+[submodule "mcp/dooray-mcp"]
+	path = mcp/dooray-mcp
+	url = https://github.com/GeonheeYe/dooray-mcp.git

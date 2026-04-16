@@ -1,18 +1,5 @@
-# Secrets
-mcp/secrets.json
-mcp/servers.json
-
-# Memory (personal data)
-memory/*
-!memory/.gitkeep
-
-# OS
 .DS_Store
-
-# Codex system skills (runtime generated)
 skills/.system/
-
-# Claude plugins (personal)
 claude_plugins/cache/
 claude_plugins/marketplaces/
 claude_plugins/install-counts-cache.json
