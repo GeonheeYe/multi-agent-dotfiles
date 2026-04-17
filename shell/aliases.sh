@@ -29,6 +29,10 @@ _dotfiles_push() {
   fi
 }
 
+_s20_openclaw() {
+  "$DOTFILES/scripts/s20-openclaw.sh" "$@"
+}
+
 # 기존 interactive alias가 함수 정의 토큰을 깨뜨리지 않도록 정리
 unalias cc ccd ccr cdd cu 2>/dev/null || true
 
@@ -88,4 +92,17 @@ cu() {
     printf 'cursor command not found\n' >&2
     return 127
   fi
+}
+
+# S20 / OpenClaw
+s20oc() {
+  _s20_openclaw "$@"
+}
+
+s20tg() {
+  _s20_openclaw telegram-send "$@"
+}
+
+s20gw() {
+  _s20_openclaw gateway-up
 }
