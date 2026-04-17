@@ -5,7 +5,7 @@
       "repo": "anthropics/claude-plugins-official"
     },
     "installLocation": "/Users/geonhee/.claude/plugins/marketplaces/claude-plugins-official",
-    "lastUpdated": "2026-04-17T00:17:03.078Z"
+    "lastUpdated": "2026-04-17T04:42:23.666Z"
   },
   "team-attention-plugins": {
     "source": {
@@ -13,7 +13,7 @@
       "repo": "team-attention/plugins-for-claude-natives"
     },
     "installLocation": "/Users/geonhee/.claude/plugins/marketplaces/team-attention-plugins",
-    "lastUpdated": "2026-04-17T00:16:40.498Z"
+    "lastUpdated": "2026-04-17T04:42:19.239Z"
   },
   "git-for-everyone": {
     "source": {
@@ -21,7 +21,7 @@
       "url": "https://github.com/ai-native-camp/git-for-everyone.git"
     },
     "installLocation": "/Users/geonhee/.claude/plugins/marketplaces/git-for-everyone",
-    "lastUpdated": "2026-04-17T00:16:41.601Z"
+    "lastUpdated": "2026-04-17T04:42:20.363Z"
   },
   "chrome-devtools-plugins": {
     "source": {
@@ -37,6 +37,6 @@
       "repo": "Q00/ouroboros"
     },
     "installLocation": "/Users/geonhee/.claude/plugins/marketplaces/ouroboros",
-    "lastUpdated": "2026-04-17T00:16:44.715Z"
+    "lastUpdated": "2026-04-17T03:34:17.487Z"
   }
 }
