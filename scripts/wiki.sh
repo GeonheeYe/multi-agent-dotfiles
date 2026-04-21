@@ -4,8 +4,8 @@
 #   wiki                -> 전체 프로젝트 목록
 #   wiki <키워드>       -> 프로젝트 퍼지 매칭 후 context/overview/timeline 중 하나 출력
 # 기본 동작:
-#   1) 로컬 ~/LONGMEMORY 우선
-#   2) 없으면 S20(YOUR_S20_HOST) fallback
+#   1) S20(YOUR_S20_HOST) 우선
+#   2) 실패 시 로컬 ~/LONGMEMORY fallback
 
 set -euo pipefail
 
@@ -85,15 +85,15 @@ _get_project_list_remote() {
 }
 
 _get_project_list() {
-  if _has_local_wiki; then
-    _get_project_list_local && return 0
-  fi
-
   if _has_remote_wiki; then
     _get_project_list_remote && return 0
   fi
 
-  printf '로컬 LONGMEMORY도 없고 S20에도 연결할 수 없습니다.\n' >&2
+  if _has_local_wiki; then
+    _get_project_list_local && return 0
+  fi
+
+  printf 'S20에도 연결할 수 없고 로컬 LONGMEMORY도 찾지 못했습니다.\n' >&2
   printf '확인한 로컬 후보 경로: %s\n' "${LONGMEMORY_CANDIDATES[*]}" >&2
   return 1
 }
@@ -131,10 +131,10 @@ _fetch_context_remote() {
 
 _fetch_context() {
   local proj="$1"
-  if _has_local_wiki && _fetch_context_local "$proj"; then
+  if _has_remote_wiki && _fetch_context_remote "$proj"; then
     return 0
   fi
-  if _has_remote_wiki && _fetch_context_remote "$proj"; then
+  if _has_local_wiki && _fetch_context_local "$proj"; then
     return 0
   fi
   return 1
@@ -149,7 +149,7 @@ keyword="$1"
 all_projects="$(_get_project_list 2>/dev/null || true)"
 
 if [ -z "$all_projects" ]; then
-  printf '프로젝트 목록을 가져올 수 없습니다. 로컬 LONGMEMORY 또는 S20 연결 상태를 확인해 주세요.\n' >&2
+  printf '프로젝트 목록을 가져올 수 없습니다. S20 연결 상태를 먼저 확인해 주세요. 로컬 LONGMEMORY는 fallback입니다.\n' >&2
   exit 1
 fi
 
