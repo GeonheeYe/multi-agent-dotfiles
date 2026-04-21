@@ -117,7 +117,7 @@ _run_codex_with_home() {
   before_file="$(_latest_codex_session_file "$sessions_dir")"
   before_mtime=0
   if [ -n "${before_file:-}" ] && [ -f "$before_file" ]; then
-    before_mtime="$(stat -f '%m' "$before_file" 2>/dev/null || stat -c '%Y' "$before_file" 2>/dev/null || echo 0)"
+    before_mtime="$(stat -c '%Y' "$before_file" 2>/dev/null || stat -f '%Sm' -t '%s' "$before_file" 2>/dev/null || echo 0)"
   fi
 
   case $- in
@@ -134,7 +134,7 @@ _run_codex_with_home() {
   after_file="$(_latest_codex_session_file "$sessions_dir")"
   after_mtime=0
   if [ -n "${after_file:-}" ] && [ -f "$after_file" ]; then
-    after_mtime="$(stat -f '%m' "$after_file" 2>/dev/null || stat -c '%Y' "$after_file" 2>/dev/null || echo 0)"
+    after_mtime="$(stat -c '%Y' "$after_file" 2>/dev/null || stat -f '%Sm' -t '%s' "$after_file" 2>/dev/null || echo 0)"
   fi
 
   if [ -x "$DOTFILES/scripts/save-session-scp.sh" ] && [ -n "${after_file:-}" ] && { [ "$after_file" != "${before_file:-}" ] || [ "$after_mtime" -gt "$before_mtime" ]; }; then
