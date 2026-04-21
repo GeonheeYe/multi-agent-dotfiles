@@ -28,6 +28,19 @@ backup_and_link() {
   ln -sf "$target" "$link" && echo "✓ $link"
 }
 
+ensure_line_in_file() {
+  local file_path="$1"
+  local line="$2"
+
+  touch "$file_path"
+  if ! grep -qF "$line" "$file_path"; then
+    printf '\n%s\n' "$line" >> "$file_path"
+    echo "✓ $file_path에 설정 추가"
+  else
+    echo "✓ $file_path 설정 이미 존재"
+  fi
+}
+
 copy_skill_dir() {
   local source_dir="$1"
   local skill_name="$2"
@@ -123,13 +136,15 @@ fi
 
 # --- shell aliases (dotfiles pull 자동화) ---
 SOURCE_LINE="source \"$DOTFILES/shell/aliases.sh\""
+PATH_LINE='export PATH="$HOME/bin:$PATH"'
 # 현재 쉘 기준으로 rc 파일 결정, 없으면 bash 기본값
 if [ -n "$ZSH_VERSION" ] || [ "$(basename "$SHELL")" = "zsh" ]; then
   SHELL_RC="$HOME/.zshrc"
 else
   SHELL_RC="$HOME/.bashrc"
 fi
-if [ -f "$SHELL_RC" ] && ! grep -qF "aliases.sh" "$SHELL_RC"; then
+touch "$SHELL_RC"
+if ! grep -qF "aliases.sh" "$SHELL_RC"; then
   echo "" >> "$SHELL_RC"
   echo "# dotfiles aliases" >> "$SHELL_RC"
   echo "$SOURCE_LINE" >> "$SHELL_RC"
@@ -137,6 +152,9 @@ if [ -f "$SHELL_RC" ] && ! grep -qF "aliases.sh" "$SHELL_RC"; then
 else
   echo "✓ shell aliases 이미 설정됨"
 fi
+ensure_line_in_file "$SHELL_RC" "$PATH_LINE"
+ensure_line_in_file "$HOME/.bashrc" "$PATH_LINE"
+ensure_line_in_file "$HOME/.profile" "$PATH_LINE"
 
 # --- ~/bin wrappers (sync/push/save automation) ---
 mkdir -p "$HOME/bin"
@@ -234,6 +252,42 @@ exit "$status"
 EOF
 chmod +x "$HOME/bin/codex"
 echo "✓ ~/bin/codex"
+
+cat > "$HOME/bin/cdd-work" <<'EOF'
+#!/usr/bin/env bash
+set -euo pipefail
+
+DOTFILES="${DOTFILES:-$HOME/dotfiles}"
+source "$DOTFILES/shell/aliases.sh"
+
+cdd-work "$@"
+EOF
+chmod +x "$HOME/bin/cdd-work"
+echo "✓ ~/bin/cdd-work"
+
+cat > "$HOME/bin/cdd-personal" <<'EOF'
+#!/usr/bin/env bash
+set -euo pipefail
+
+DOTFILES="${DOTFILES:-$HOME/dotfiles}"
+source "$DOTFILES/shell/aliases.sh"
+
+cdd-personal "$@"
+EOF
+chmod +x "$HOME/bin/cdd-personal"
+echo "✓ ~/bin/cdd-personal"
+
+cat > "$HOME/bin/cdd-personal-login" <<'EOF'
+#!/usr/bin/env bash
+set -euo pipefail
+
+DOTFILES="${DOTFILES:-$HOME/dotfiles}"
+source "$DOTFILES/shell/aliases.sh"
+
+cdd-personal-login "$@"
+EOF
+chmod +x "$HOME/bin/cdd-personal-login"
+echo "✓ ~/bin/cdd-personal-login"
 
 # --- Cursor agent-transcripts watcher (launchd, macOS) ---
 if [ "$(uname -s)" = "Darwin" ]; then

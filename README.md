@@ -36,6 +36,7 @@ dotfiles/
 
 - git
 - python3
+- Windows 사용 시 WSL
 - [Claude Code](https://claude.ai/code)
 - [Codex CLI](https://github.com/openai/codex) (선택)
 - [Cursor](https://cursor.com) (선택)
@@ -60,10 +61,17 @@ cd ~/dotfiles && ./setup.sh
 
 - `~/.claude`, `~/.codex`, `~/.cursor`에 skills/commands/rules symlink 생성
 - MCP 서버 설정 및 dooray-mcp 빌드
-- `.zshrc`/`.bashrc`에 shell aliases 등록 (`cc`, `ccd`, `ccr`, `cdd`, `cu`)
+- `~/bin` 래퍼 설치 및 `PATH` 등록
+- `.zshrc`/`.bashrc`에 shell aliases 등록 (`cc`, `ccd`, `ccr`, `cdd`, `cdd-work`, `cdd-personal`, `cu`)
 - Claude SessionStart 훅 등록 (세션 시작 시 dotfiles 자동 pull)
 
 설치 후 새 터미널을 열거나 `source ~/.zshrc`를 실행하면 aliases가 활성화됩니다.
+
+### WSL 지원
+
+- Windows에서는 WSL 환경을 기준으로 지원합니다.
+- `setup.sh`가 `~/bin`을 `PATH` 앞에 추가하므로 새 셸에서 `cdd-work`, `cdd-personal`, `codex`, `claude`를 바로 실행할 수 있습니다.
+- PowerShell/CMD 네이티브 실행은 현재 지원 범위가 아닙니다.
 
 ### 4. Claude Code 플러그인 설치
 

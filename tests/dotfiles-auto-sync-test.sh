@@ -80,6 +80,11 @@ HOME="$temp_home" bash "$ROOT/setup.sh" >/dev/null 2>&1 || true
 
 [ -f "$temp_home/bin/claude" ] || fail "setup should install ~/bin/claude wrapper"
 [ -f "$temp_home/bin/codex" ] || fail "setup should install ~/bin/codex wrapper"
+[ -f "$temp_home/bin/cdd-work" ] || fail "setup should install ~/bin/cdd-work wrapper"
+[ -f "$temp_home/bin/cdd-personal" ] || fail "setup should install ~/bin/cdd-personal wrapper"
+[ -f "$temp_home/bin/cdd-personal-login" ] || fail "setup should install ~/bin/cdd-personal-login wrapper"
+[ -f "$temp_home/.profile" ] || fail "setup should create ~/.profile for PATH bootstrap"
+[ -f "$temp_home/.bashrc" ] || fail "setup should create ~/.bashrc for PATH bootstrap"
 
 claude_wrapper="$(cat "$temp_home/bin/claude")"
 assert_contains "$claude_wrapper" "dotfiles-auto-sync.sh" "claude wrapper should source sync script"
@@ -93,5 +98,23 @@ assert_contains "$codex_wrapper" "push-dotfiles.sh" "codex wrapper should run pu
 assert_contains "$codex_wrapper" "save-session-scp.sh" "codex wrapper should save sessions after exit"
 assert_contains "$codex_wrapper" 'type -aP "codex"' "codex wrapper should resolve the real binary"
 assert_contains "$codex_wrapper" '"$real_bin" "$@"' "codex wrapper should invoke the real binary"
+
+cdd_work_wrapper="$(cat "$temp_home/bin/cdd-work")"
+assert_contains "$cdd_work_wrapper" 'source "$DOTFILES/shell/aliases.sh"' "cdd-work wrapper should source aliases"
+assert_contains "$cdd_work_wrapper" 'cdd-work "$@"' "cdd-work wrapper should delegate to cdd-work function"
+
+cdd_personal_wrapper="$(cat "$temp_home/bin/cdd-personal")"
+assert_contains "$cdd_personal_wrapper" 'source "$DOTFILES/shell/aliases.sh"' "cdd-personal wrapper should source aliases"
+assert_contains "$cdd_personal_wrapper" 'cdd-personal "$@"' "cdd-personal wrapper should delegate to cdd-personal function"
+
+cdd_personal_login_wrapper="$(cat "$temp_home/bin/cdd-personal-login")"
+assert_contains "$cdd_personal_login_wrapper" 'source "$DOTFILES/shell/aliases.sh"' "cdd-personal-login wrapper should source aliases"
+assert_contains "$cdd_personal_login_wrapper" 'cdd-personal-login "$@"' "cdd-personal-login wrapper should delegate to cdd-personal-login function"
+
+profile_contents="$(cat "$temp_home/.profile")"
+assert_contains "$profile_contents" 'export PATH="$HOME/bin:$PATH"' "~/.profile should prepend ~/bin to PATH"
+
+bashrc_contents="$(cat "$temp_home/.bashrc")"
+assert_contains "$bashrc_contents" 'export PATH="$HOME/bin:$PATH"' "~/.bashrc should prepend ~/bin to PATH"
 
 echo "PASS"
