@@ -59,8 +59,9 @@ _find_real_codex_bin() {
 
 _latest_codex_session_file() {
   local sessions_dir="$1"
+  [ -d "$sessions_dir" ] || return 0
   find "$sessions_dir" -type f -name '*.jsonl' 2>/dev/null | while read -r path; do
-    stat -f '%m %N' "$path" 2>/dev/null || stat -c '%Y %n' "$path" 2>/dev/null || true
+    stat -c '%Y %n' "$path" 2>/dev/null || stat -f '%Sm %N' -t '%s' "$path" 2>/dev/null || true
   done | sort -n | tail -n 1 | cut -d' ' -f2-
 }
 

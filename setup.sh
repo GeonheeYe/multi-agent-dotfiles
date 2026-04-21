@@ -464,5 +464,19 @@ PLIST
   launchctl load "$PLIST_PATH" && echo "✓ watch-agent-transcripts launchd 등록 완료"
 fi
 
+# --- codex 최신 버전 유지 ---
+if command -v npm >/dev/null 2>&1; then
+  INSTALLED_CODEX="$(npm list -g @openai/codex --prefix "$(npm root -g)/.." 2>/dev/null | grep '@openai/codex@' | sed 's/.*@//' || echo '')"
+  LATEST_CODEX="$(npm show @openai/codex version 2>/dev/null || echo '')"
+  if [ -n "$LATEST_CODEX" ] && [ "$INSTALLED_CODEX" != "$LATEST_CODEX" ]; then
+    echo "codex 업그레이드 중: ${INSTALLED_CODEX:-없음} → $LATEST_CODEX"
+    npm install -g "@openai/codex@$LATEST_CODEX" || echo "⚠ codex 업그레이드 실패 — 계속 진행"
+  else
+    echo "✓ codex 최신 버전: ${INSTALLED_CODEX}"
+  fi
+else
+  echo "⚠ npm 없음 — codex 업그레이드 건너뜀"
+fi
+
 echo ""
 echo "=== setup 완료 ==="
