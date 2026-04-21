@@ -253,6 +253,16 @@ EOF
 chmod +x "$HOME/bin/codex"
 echo "✓ ~/bin/codex"
 
+cat > "$HOME/bin/wiki" <<'EOF'
+#!/usr/bin/env bash
+set -euo pipefail
+
+DOTFILES="${DOTFILES:-$HOME/dotfiles}"
+exec "$DOTFILES/scripts/wiki.sh" "$@"
+EOF
+chmod +x "$HOME/bin/wiki"
+echo "✓ ~/bin/wiki"
+
 cat > "$HOME/bin/cdd-work" <<'EOF'
 #!/usr/bin/env bash
 set -euo pipefail

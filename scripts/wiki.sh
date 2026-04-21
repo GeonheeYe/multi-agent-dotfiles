@@ -1,64 +1,71 @@
 #!/usr/bin/env bash
-# LONGMEMORY wiki 조회 - Cursor/Claude 스킬에서 직접 호출 가능한 독립 스크립트
-# 사용법: wiki [키워드]
-#   인수 없음  → 전체 프로젝트 목록
-#   인수 있음  → 키워드 퍼지 매칭 후 context.md 출력
+# 로컬 LONGMEMORY wiki 조회 스크립트
+# 사용법:
+#   wiki                -> 전체 프로젝트 목록
+#   wiki <키워드>       -> 프로젝트 퍼지 매칭 후 context/overview/timeline 중 하나 출력
 
-WIKI_INDEX_REMOTE="/data/data/com.termux/files/home/LONGMEMORY/wiki/index.md"
-WIKI_BASE_REMOTE="/data/data/com.termux/files/home/LONGMEMORY/wiki/projects"
-WIKI_BASE_LOCAL="/data/data/com.termux/files/home/LONGMEMORY/wiki/projects"
-S20_HOST="YOUR_S20_HOST"
+set -euo pipefail
 
-# S20(Termux) 위에서 직접 실행 중이면 로컬 경로 사용
-_on_s20=false
-[ -d "$WIKI_BASE_LOCAL" ] && _on_s20=true
+LONGMEMORY_DIR="${LONGMEMORY_DIR:-$HOME/LONGMEMORY}"
+WIKI_INDEX="${LONGMEMORY_DIR}/wiki/index.md"
+WIKI_BASE="${LONGMEMORY_DIR}/wiki/projects"
 
-# index.md 파싱: "- [project-name](./projects/..." 형식
 _parse_index() {
-  grep -E '^\- \[' "$1" | grep '\./projects/' | sed 's/^- \[//;s/\].*//'
+  grep -E '^- \[' "$1" | grep './projects/' | sed 's/^- \[//;s/\].*//'
 }
 
 _get_project_list() {
-  if $_on_s20; then
-    _parse_index "/data/data/com.termux/files/home/LONGMEMORY/wiki/index.md"
-  else
-    local tmp; tmp="$(mktemp)"
-    if scp -q -o ConnectTimeout=5 "${S20_HOST}:${WIKI_INDEX_REMOTE}" "$tmp" 2>/dev/null; then
-      _parse_index "$tmp"
-      rm -f "$tmp"
-    else
-      rm -f "$tmp"
-      printf '(S20 연결 실패)\n' >&2
-      return 1
-    fi
+  if [ -f "$WIKI_INDEX" ]; then
+    _parse_index "$WIKI_INDEX"
+    return 0
   fi
+
+  if [ -d "$WIKI_BASE" ]; then
+    find "$WIKI_BASE" -mindepth 1 -maxdepth 1 -type d -exec basename {} \; | sort
+    return 0
+  fi
+
+  printf '로컬 LONGMEMORY wiki를 찾을 수 없습니다: %s\n' "$WIKI_BASE" >&2
+  return 1
+}
+
+_pick_context_file() {
+  local proj="$1"
+  local candidates=(
+    "$WIKI_BASE/$proj/context.md"
+    "$WIKI_BASE/$proj/overview.md"
+    "$WIKI_BASE/$proj/timeline.md"
+    "$WIKI_BASE/$proj/tasks.md"
+    "$WIKI_BASE/$proj/decisions.md"
+    "$WIKI_BASE/$proj/summaries.md"
+  )
+  local file
+  for file in "${candidates[@]}"; do
+    if [ -f "$file" ]; then
+      printf '%s\n' "$file"
+      return 0
+    fi
+  done
+  return 1
 }
 
 _fetch_context() {
   local proj="$1"
-  if $_on_s20; then
-    cat "${WIKI_BASE_LOCAL}/${proj}/context.md" 2>/dev/null || return 1
-  else
-    local tmp; tmp="$(mktemp)"
-    if scp -q -o ConnectTimeout=5 \
-        "${S20_HOST}:${WIKI_BASE_REMOTE}/${proj}/context.md" "$tmp" 2>/dev/null; then
-      cat "$tmp"; rm -f "$tmp"; return 0
-    fi
-    rm -f "$tmp"; return 1
-  fi
+  local file
+  file="$(_pick_context_file "$proj")" || return 1
+  cat "$file"
 }
 
-# ──────────────────────────────────────────
 if [ $# -eq 0 ]; then
   _get_project_list
   exit 0
 fi
 
 keyword="$1"
-all_projects="$(_get_project_list 2>/dev/null)"
+all_projects="$(_get_project_list 2>/dev/null || true)"
 
 if [ -z "$all_projects" ]; then
-  printf 'S20에 연결하거나 프로젝트 목록을 가져올 수 없습니다.\n' >&2
+  printf '로컬 LONGMEMORY 프로젝트 목록을 가져올 수 없습니다.\n' >&2
   exit 1
 fi
 
@@ -72,7 +79,8 @@ if [ "$match_count" -eq 0 ]; then
 elif [ "$match_count" -eq 1 ]; then
   matched="$(printf '%s' "$matches" | xargs)"
   _fetch_context "$matched" || {
-    printf 'context.md를 가져올 수 없습니다: %s\n' "$matched" >&2; exit 1
+    printf '읽을 수 있는 위키 파일이 없습니다: %s\n' "$matched" >&2
+    exit 1
   }
 else
   printf '여러 프로젝트가 매칭됩니다:\n%s\n\n정확한 이름을 지정해 주세요.\n' "$matches" >&2
