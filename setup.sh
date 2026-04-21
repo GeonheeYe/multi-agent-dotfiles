@@ -258,6 +258,10 @@ cat > "$HOME/bin/wiki" <<'EOF'
 set -euo pipefail
 
 DOTFILES="${DOTFILES:-$HOME/dotfiles}"
+REAL_HOME="$(getent passwd "$(id -un)" 2>/dev/null | cut -d: -f6)"
+if [ -n "$REAL_HOME" ] && [ -z "${LONGMEMORY_DIR:-}" ]; then
+  export LONGMEMORY_DIR="$REAL_HOME/LONGMEMORY"
+fi
 exec "$DOTFILES/scripts/wiki.sh" "$@"
 EOF
 chmod +x "$HOME/bin/wiki"

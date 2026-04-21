@@ -9,9 +9,20 @@
 
 set -euo pipefail
 
-LONGMEMORY_DIR="${LONGMEMORY_DIR:-$HOME/LONGMEMORY}"
-WIKI_INDEX_LOCAL="${LONGMEMORY_DIR}/wiki/index.md"
-WIKI_BASE_LOCAL="${LONGMEMORY_DIR}/wiki/projects"
+REAL_HOME="$(getent passwd "$(id -un)" 2>/dev/null | cut -d: -f6)"
+if [ -z "$REAL_HOME" ]; then
+  REAL_HOME="$HOME"
+fi
+
+LONGMEMORY_CANDIDATES=()
+if [ -n "${LONGMEMORY_DIR:-}" ]; then
+  LONGMEMORY_CANDIDATES+=("$LONGMEMORY_DIR")
+fi
+LONGMEMORY_CANDIDATES+=(
+  "$REAL_HOME/LONGMEMORY"
+  "$HOME/LONGMEMORY"
+)
+
 WIKI_INDEX_REMOTE="/data/data/com.termux/files/home/LONGMEMORY/wiki/index.md"
 WIKI_BASE_REMOTE="/data/data/com.termux/files/home/LONGMEMORY/wiki/projects"
 S20_HOST="${S20_HOST:-YOUR_S20_HOST}"
@@ -22,8 +33,24 @@ _parse_index() {
   grep -E '^- \[' "$1" | grep './projects/' | sed 's/^- \[//;s/\].*//'
 }
 
+_resolve_local_longmemory() {
+  local candidate
+  for candidate in "${LONGMEMORY_CANDIDATES[@]}"; do
+    [ -n "$candidate" ] || continue
+    if [ -f "$candidate/wiki/index.md" ] || [ -d "$candidate/wiki/projects" ]; then
+      printf '%s\n' "$candidate"
+      return 0
+    fi
+  done
+  return 1
+}
+
+LOCAL_LONGMEMORY="$( _resolve_local_longmemory || true )"
+WIKI_INDEX_LOCAL="${LOCAL_LONGMEMORY:+$LOCAL_LONGMEMORY/wiki/index.md}"
+WIKI_BASE_LOCAL="${LOCAL_LONGMEMORY:+$LOCAL_LONGMEMORY/wiki/projects}"
+
 _has_local_wiki() {
-  [ -f "$WIKI_INDEX_LOCAL" ] || [ -d "$WIKI_BASE_LOCAL" ]
+  [ -n "$LOCAL_LONGMEMORY" ] && { [ -f "$WIKI_INDEX_LOCAL" ] || [ -d "$WIKI_BASE_LOCAL" ]; }
 }
 
 _has_remote_wiki() {
@@ -67,6 +94,7 @@ _get_project_list() {
   fi
 
   printf '로컬 LONGMEMORY도 없고 S20에도 연결할 수 없습니다.\n' >&2
+  printf '확인한 로컬 후보 경로: %s\n' "${LONGMEMORY_CANDIDATES[*]}" >&2
   return 1
 }
 
