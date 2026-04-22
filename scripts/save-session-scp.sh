@@ -15,22 +15,24 @@ echo "[$(date '+%Y-%m-%d %H:%M:%S')] === start session=${SESSION_ID:0:8} ===" >&
 echo "[save-session] source: $SOURCE" >&2
 echo "[save-session] transcript_path: $TRANSCRIPT_PATH" >&2
 
-if [ -d "/data/data/com.termux/files/home" ]; then
-    LOCAL_RAW_DIR="/data/data/com.termux/files/home/LONGMEMORY/raw/unprocessed"
-else
-    LOCAL_RAW_DIR="$SESSIONS_DIR"
-fi
-mkdir -p "$LOCAL_RAW_DIR"
-
 TIMESTAMP=$(date +"%Y-%m-%d_%H-%M-%S")
 SESSION_SHORT="${SESSION_ID:0:8}"
 
-# Cursor watcher fires multiple times while a jsonl grows.
-# For Cursor source, overwrite a stable file name to avoid flooding raw/ with per-event files.
-if [ "$SOURCE" = "cursor" ]; then
-    OUTPUT_FILE="$LOCAL_RAW_DIR/cursor_${SESSION_SHORT}.md"
+if [ -d "/data/data/com.termux/files/home" ]; then
+    OUTPUT_BASE_DIR="/data/data/com.termux/files/home/LONGMEMORY/raw/unprocessed"
+    KEEP_LOCAL_RAW=1
+    mkdir -p "$OUTPUT_BASE_DIR"
+    # Cursor watcher fires multiple times while a jsonl grows.
+    # For Cursor source, overwrite a stable file name to avoid flooding raw/ with per-event files.
+    if [ "$SOURCE" = "cursor" ]; then
+        OUTPUT_FILE="$OUTPUT_BASE_DIR/cursor_${SESSION_SHORT}.md"
+    else
+        OUTPUT_FILE="$OUTPUT_BASE_DIR/${TIMESTAMP}_${SESSION_SHORT}.md"
+    fi
 else
-    OUTPUT_FILE="$LOCAL_RAW_DIR/${TIMESTAMP}_${SESSION_SHORT}.md"
+    KEEP_LOCAL_RAW=0
+    OUTPUT_BASE_DIR="$(mktemp -d "$SESSIONS_DIR/save-session.XXXXXX")"
+    OUTPUT_FILE="$OUTPUT_BASE_DIR/${TIMESTAMP}_${SESSION_SHORT}.md"
 fi
 
 if [ -z "$TRANSCRIPT_PATH" ] || [ ! -f "$TRANSCRIPT_PATH" ]; then
@@ -144,6 +146,8 @@ SESSION_SHORT="${SESSION_ID:0:8}"
 nohup bash -c '
     LOG_FILE="'"$LOG_FILE"'"
     OUTPUT_FILE="'"$OUTPUT_FILE"'"
+    OUTPUT_BASE_DIR="'"$OUTPUT_BASE_DIR"'"
+    KEEP_LOCAL_RAW="'"$KEEP_LOCAL_RAW"'"
     REMOTE_HOST="'"$REMOTE_HOST"'"
     REMOTE_DIR="'"$REMOTE_DIR"'"
     SESSION_SHORT="'"$SESSION_SHORT"'"
@@ -179,6 +183,10 @@ nohup bash -c '
 
     if [ "$scp_success" -eq 0 ]; then
         echo "[save-session:bg] 최종 실패, 로컬만 저장됨: $OUTPUT_FILE"
+    fi
+    if [ "$KEEP_LOCAL_RAW" -ne 1 ]; then
+        rm -rf "$OUTPUT_BASE_DIR"
+        echo "[save-session:bg] 임시 raw 정리: $OUTPUT_BASE_DIR"
     fi
     echo "[$(date '"'"'+%Y-%m-%d %H:%M:%S'"'"')] === end session=$SESSION_SHORT ==="
 ' </dev/null >/dev/null 2>&1 &
