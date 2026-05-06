@@ -6,6 +6,9 @@ import sys
 from datetime import datetime, timezone
 from pathlib import Path
 
+# 참고: 이 dotfiles 버전은 간이 스크립트라 현재 메인 분류 로직은
+# workspace/scripts/process_longmemory_raw.py 쪽을 우선 사용한다.
+
 LONGMEMORY = Path('/data/data/com.termux/files/home/LONGMEMORY')
 RAW_DIR = LONGMEMORY / 'raw'
 INBOX_DIR = LONGMEMORY / 'inbox'
