@@ -73,6 +73,7 @@ _prepare_codex_profile() {
   fi
 
   mkdir -p "$profile_home/.codex"
+  mkdir -p "$profile_home/.codex/plugins"
 
   if [ -f "$DOTFILES_HOME/.codex/config.toml" ] && [ ! -L "$profile_home/.codex/config.toml" ]; then
     rm -f "$profile_home/.codex/config.toml"
@@ -87,6 +88,11 @@ _prepare_codex_profile() {
   if [ -d "$DOTFILES/commands" ] && [ ! -L "$profile_home/.codex/prompts" ]; then
     rm -rf "$profile_home/.codex/prompts"
     ln -s "$DOTFILES/commands" "$profile_home/.codex/prompts"
+  fi
+
+  if [ -d "$DOTFILES_HOME/.codex/plugins/cache" ] && [ ! -L "$profile_home/.codex/plugins/cache" ]; then
+    rm -rf "$profile_home/.codex/plugins/cache"
+    ln -s "$DOTFILES_HOME/.codex/plugins/cache" "$profile_home/.codex/plugins/cache"
   fi
 }
 

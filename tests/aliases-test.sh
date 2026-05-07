@@ -25,7 +25,7 @@ trap 'rm -rf "$temp_home"' EXIT
 
 mkdir -p "$temp_home/bin" "$temp_home/dotfiles/scripts"
 mkdir -p "$temp_home/dotfiles/skills" "$temp_home/dotfiles/commands"
-mkdir -p "$temp_home/.codex"
+mkdir -p "$temp_home/.codex/plugins/cache"
 echo 'model = "gpt-5.4"' >"$temp_home/.codex/config.toml"
 
 cat >"$temp_home/bin/codex-real" <<'EOF'
@@ -60,6 +60,7 @@ assert_contains "$personal_output" "real:$temp_home/.codex-personal-home args:--
 [ -L "$temp_home/.codex-personal-home/.codex/skills" ] || fail "cdd-personal should link shared skills"
 [ -L "$temp_home/.codex-personal-home/.codex/prompts" ] || fail "cdd-personal should link shared prompts"
 [ -L "$temp_home/.codex-personal-home/.codex/config.toml" ] || fail "cdd-personal should link shared config"
+[ -L "$temp_home/.codex-personal-home/.codex/plugins/cache" ] || fail "cdd-personal should link shared plugin cache"
 
 login_output="$(
   HOME="$temp_home" DOTFILES="$temp_home/dotfiles" REAL_CODEX_BIN="$temp_home/bin/codex-real" /bin/bash -lc '
