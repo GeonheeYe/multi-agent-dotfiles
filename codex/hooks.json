@@ -5,7 +5,7 @@
         "hooks": [
           {
             "type": "command",
-            "command": "DOTFILES=/Users/geonhee/dotfiles /Users/geonhee/dotfiles/scripts/push-dotfiles.sh"
+            "command": "/Users/geonhee/dotfiles/scripts/push-dotfiles.sh"
           }
         ]
       },
