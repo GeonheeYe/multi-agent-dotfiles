@@ -156,7 +156,7 @@ ensure_line_in_file "$SHELL_RC" "$PATH_LINE"
 ensure_line_in_file "$HOME/.bashrc" "$PATH_LINE"
 ensure_line_in_file "$HOME/.profile" "$PATH_LINE"
 
-# --- ~/bin wrappers (sync/push/save automation) ---
+# --- ~/bin wrappers (push/save automation) ---
 mkdir -p "$HOME/bin"
 
 cat > "$HOME/bin/claude" <<'EOF'
@@ -165,10 +165,6 @@ set -euo pipefail
 
 DOTFILES="${DOTFILES:-$HOME/dotfiles}"
 WRAPPER_PATH="$HOME/bin/claude"
-
-if [ -x "$DOTFILES/scripts/dotfiles-auto-sync.sh" ]; then
-  "$DOTFILES/scripts/dotfiles-auto-sync.sh" >/dev/null 2>&1 || true
-fi
 
 real_bin="$(type -aP "claude" | grep -vx "$WRAPPER_PATH" | head -n 1 || true)"
 if [ -z "$real_bin" ]; then
@@ -203,10 +199,6 @@ latest_session_file() {
     stat -c '%Y %n' "$path" 2>/dev/null || true
   done | sort -n | tail -n 1 | cut -d' ' -f2-
 }
-
-if [ -x "$DOTFILES/scripts/dotfiles-auto-sync.sh" ]; then
-  "$DOTFILES/scripts/dotfiles-auto-sync.sh" >/dev/null 2>&1 || true
-fi
 
 before_file="$(latest_session_file)"
 before_mtime=0
@@ -330,7 +322,7 @@ if [ "$(uname -s)" = "Darwin" ]; then
   fi
 fi
 
-# --- Claude SessionStart 훅 (dotfiles pull) ---
+# --- Claude SessionStart 자동 pull 훅 정리 ---
 CLAUDE_SETTINGS="$HOME/.claude/settings.json"
 if [ -f "$CLAUDE_SETTINGS" ]; then
   python3 - <<'PYEOF'
@@ -343,25 +335,30 @@ sync_script = f"{dotfiles}/scripts/sync-dotfiles.sh"
 with open(settings_path) as f:
     s = json.load(f)
 
-pull_hook = {"type": "command", "command": f"{sync_script} >/dev/null 2>&1 || true"}
-hooks = s.setdefault("hooks", {})
-session_start = hooks.setdefault("SessionStart", [{"hooks": []}])
-existing = session_start[0]["hooks"]
+hooks = s.get("hooks", {})
+session_start = hooks.get("SessionStart", [])
 
-existing = [
-    h for h in existing
-    if "git -C" not in h.get("command", "") or "dotfiles" not in h.get("command", "")
+for entry in session_start:
+    if not isinstance(entry, dict) or not isinstance(entry.get("hooks"), list):
+        continue
+    entry["hooks"] = [
+        h for h in entry["hooks"]
+        if sync_script not in h.get("command", "")
+        and not ("git -C" in h.get("command", "") and "dotfiles" in h.get("command", ""))
+    ]
+
+hooks["SessionStart"] = [
+    entry for entry in session_start
+    if isinstance(entry, dict) and entry.get("hooks")
 ]
-if not any(sync_script in h.get("command", "") for h in existing):
-    existing.insert(0, pull_hook)
-
-session_start[0]["hooks"] = existing
+if not hooks["SessionStart"]:
+    hooks.pop("SessionStart", None)
 
 with open(settings_path, "w") as f:
     json.dump(s, f, indent=2, ensure_ascii=False)
     f.write("\n")
 
-print("✓ Claude SessionStart 훅 추가")
+print("✓ Claude SessionStart 자동 pull 훅 정리")
 PYEOF
 else
   echo "✓ Claude settings 없음 — SessionStart 훅 건너뜀"

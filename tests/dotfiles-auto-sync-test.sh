@@ -27,6 +27,15 @@ assert_contains() {
   fi
 }
 
+assert_not_contains() {
+  local haystack="$1"
+  local needle="$2"
+  local message="$3"
+  if [[ "$haystack" == *"$needle"* ]]; then
+    fail "$message"
+  fi
+}
+
 run_sync_case() {
   local status_output="$1"
   local pull_output="${2-}"
@@ -87,13 +96,13 @@ HOME="$temp_home" bash "$ROOT/setup.sh" >/dev/null 2>&1 || true
 [ -f "$temp_home/.bashrc" ] || fail "setup should create ~/.bashrc for PATH bootstrap"
 
 claude_wrapper="$(cat "$temp_home/bin/claude")"
-assert_contains "$claude_wrapper" "dotfiles-auto-sync.sh" "claude wrapper should source sync script"
+assert_not_contains "$claude_wrapper" "dotfiles-auto-sync.sh" "claude wrapper should not pull dotfiles on startup"
 assert_contains "$claude_wrapper" "push-dotfiles.sh" "claude wrapper should run push script after exit"
 assert_contains "$claude_wrapper" 'type -aP "claude"' "claude wrapper should resolve the real binary"
 assert_contains "$claude_wrapper" '"$real_bin" "$@"' "claude wrapper should invoke the real binary"
 
 codex_wrapper="$(cat "$temp_home/bin/codex")"
-assert_contains "$codex_wrapper" "dotfiles-auto-sync.sh" "codex wrapper should source sync script"
+assert_not_contains "$codex_wrapper" "dotfiles-auto-sync.sh" "codex wrapper should not pull dotfiles on startup"
 assert_contains "$codex_wrapper" "push-dotfiles.sh" "codex wrapper should run push script after exit"
 assert_contains "$codex_wrapper" "save-session-scp.sh" "codex wrapper should save sessions after exit"
 assert_contains "$codex_wrapper" 'type -aP "codex"' "codex wrapper should resolve the real binary"
@@ -109,7 +118,7 @@ assert_contains "$cdd_personal_wrapper" 'cdd-personal "$@"' "cdd-personal wrappe
 
 cdd_personal_login_wrapper="$(cat "$temp_home/bin/cdd-personal-login")"
 assert_contains "$cdd_personal_login_wrapper" 'source "$DOTFILES/shell/aliases.sh"' "cdd-personal-login wrapper should source aliases"
-assert_contains "$cdd_personal_login_wrapper" 'cdd-personal-login "$@"' "cdd-personal-login wrapper should delegate to cdd-personal-login function"
+assert_contains "$cdd_personal_login_wrapper" 'cdd-personal-login "$@"' "cdd-personal-login should delegate to cdd-personal-login function"
 
 profile_contents="$(cat "$temp_home/.profile")"
 assert_contains "$profile_contents" 'export PATH="$HOME/bin:$PATH"' "~/.profile should prepend ~/bin to PATH"
