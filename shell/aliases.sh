@@ -101,6 +101,14 @@ _prepare_codex_profile() {
       ln -s "$DOTFILES_HOME/.codex/hooks.json" "$profile_home/.codex/hooks.json"
     fi
   fi
+
+  if [ -d "$DOTFILES_HOME/.config/ainc" ]; then
+    mkdir -p "$profile_home/.config"
+    if [ ! -L "$profile_home/.config/ainc" ]; then
+      rm -rf "$profile_home/.config/ainc"
+      ln -s "$DOTFILES_HOME/.config/ainc" "$profile_home/.config/ainc"
+    fi
+  fi
 }
 
 _run_codex_with_home() {
