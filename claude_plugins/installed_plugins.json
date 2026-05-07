@@ -4,10 +4,10 @@
     "superpowers@claude-plugins-official": [
       {
         "scope": "user",
-        "installPath": "/Users/geonhee/.claude/plugins/cache/claude-plugins-official/superpowers/5.0.7",
-        "version": "5.0.7",
+        "installPath": "/home/geonheeye/.claude/plugins/cache/claude-plugins-official/superpowers/5.1.0",
+        "version": "5.1.0",
         "installedAt": "2026-02-18T12:20:22.911Z",
-        "lastUpdated": "2026-04-01T12:58:31.777Z",
+        "lastUpdated": "2026-05-07T07:56:50.751Z",
         "gitCommitSha": "a0b9ecce2b25aa7d703138f17650540c2e8b2cde"
       }
     ],
