@@ -5,7 +5,7 @@
       "repo": "anthropics/claude-plugins-official"
     },
     "installLocation": "/Users/geonhee/.claude/plugins/marketplaces/claude-plugins-official",
-    "lastUpdated": "2026-05-07T23:00:13.196Z"
+    "lastUpdated": "2026-05-07T23:57:07.093Z"
   },
   "team-attention-plugins": {
     "source": {
@@ -29,6 +29,14 @@
       "repo": "ChromeDevTools/chrome-devtools-mcp"
     },
     "installLocation": "/home/geonheeye/.claude/plugins/marketplaces/chrome-devtools-plugins",
-    "lastUpdated": "2026-05-07T23:00:26.441Z"
+    "lastUpdated": "2026-05-07T23:48:26.849Z"
+  },
+  "ouroboros": {
+    "source": {
+      "source": "github",
+      "repo": "Q00/ouroboros"
+    },
+    "installLocation": "/Users/geonhee/.claude/plugins/marketplaces/ouroboros",
+    "lastUpdated": "2026-05-07T23:48:28.501Z"
   }
 }

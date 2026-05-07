@@ -9,7 +9,11 @@
 
 set -euo pipefail
 
-REAL_HOME="$(getent passwd "$(id -un)" 2>/dev/null | cut -d: -f6)"
+if command -v getent >/dev/null 2>&1; then
+  REAL_HOME="$(getent passwd "$(id -un)" 2>/dev/null | cut -d: -f6 || true)"
+else
+  REAL_HOME="$HOME"
+fi
 if [ -z "$REAL_HOME" ]; then
   REAL_HOME="$HOME"
 fi
