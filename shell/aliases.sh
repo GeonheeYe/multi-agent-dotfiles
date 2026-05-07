@@ -94,6 +94,13 @@ _prepare_codex_profile() {
     rm -rf "$profile_home/.codex/plugins/cache"
     ln -s "$DOTFILES_HOME/.codex/plugins/cache" "$profile_home/.codex/plugins/cache"
   fi
+
+  if [ -f "$DOTFILES_HOME/.codex/hooks.json" ] || [ -L "$DOTFILES_HOME/.codex/hooks.json" ]; then
+    if [ ! -L "$profile_home/.codex/hooks.json" ]; then
+      rm -f "$profile_home/.codex/hooks.json"
+      ln -s "$DOTFILES_HOME/.codex/hooks.json" "$profile_home/.codex/hooks.json"
+    fi
+  fi
 }
 
 _run_codex_with_home() {
