@@ -84,7 +84,7 @@ fi
 
 temp_home="$(mktemp -d)"
 trap 'rm -rf "$temp_home"' EXIT
-mkdir -p "$temp_home/.claude" "$temp_home/.codex" "$temp_home/bin"
+mkdir -p "$temp_home/.codex" "$temp_home/bin"
 HOME="$temp_home" bash "$ROOT/setup.sh" >/dev/null 2>&1 || true
 
 [ -f "$temp_home/bin/claude" ] || fail "setup should install ~/bin/claude wrapper"
@@ -118,7 +118,7 @@ assert_contains "$cdd_personal_wrapper" 'cdd-personal "$@"' "cdd-personal wrappe
 
 cdd_personal_login_wrapper="$(cat "$temp_home/bin/cdd-personal-login")"
 assert_contains "$cdd_personal_login_wrapper" 'source "$DOTFILES/shell/aliases.sh"' "cdd-personal-login wrapper should source aliases"
-assert_contains "$cdd_personal_login_wrapper" 'cdd-personal-login "$@"' "cdd-personal-login should delegate to cdd-personal-login function"
+assert_contains "$cdd_personal_login_wrapper" 'cdd-personal-login "$@"' "cdd-personal-login wrapper should delegate to cdd-personal-login function"
 
 profile_contents="$(cat "$temp_home/.profile")"
 assert_contains "$profile_contents" 'export PATH="$HOME/bin:$PATH"' "~/.profile should prepend ~/bin to PATH"
