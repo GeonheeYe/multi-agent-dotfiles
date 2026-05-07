@@ -308,6 +308,7 @@ if [ "$(uname -s)" = "Darwin" ]; then
   mkdir -p "$DOTFILES/launchd" "$HOME/Library/LaunchAgents" "$HOME/cursor-sessions"
   WATCH_PLIST_SRC="$DOTFILES/launchd/com.geonhee.cursor-agent-transcripts-to-s20.plist"
   WATCH_PLIST_DST="$HOME/Library/LaunchAgents/com.geonhee.cursor-agent-transcripts-to-s20.plist"
+  LAUNCH_DOMAIN="gui/$(id -u)"
 
   if [ -f "$WATCH_PLIST_SRC" ]; then
     # launchd는 plist 내부의 "~" 를 확장하지 않으므로, 설치 시점에 절대경로로 치환한다.
@@ -315,7 +316,6 @@ if [ "$(uname -s)" = "Darwin" ]; then
     echo "✓ LaunchAgent 설치: $WATCH_PLIST_DST"
 
     # load/reload (사용자 GUI 세션 기준)
-    LAUNCH_DOMAIN="gui/$(id -u)"
     launchctl bootout "$LAUNCH_DOMAIN" "$WATCH_PLIST_DST" >/dev/null 2>&1 || true
     launchctl bootstrap "$LAUNCH_DOMAIN" "$WATCH_PLIST_DST" >/dev/null 2>&1 || true
     launchctl enable "$LAUNCH_DOMAIN/com.geonhee.cursor-agent-transcripts-to-s20" >/dev/null 2>&1 || true
@@ -323,7 +323,10 @@ if [ "$(uname -s)" = "Darwin" ]; then
 
     echo "✓ Cursor 세션 자동 전송 watcher 활성화"
   else
-    echo "⚠ watcher plist 없음 — Cursor 세션 자동 전송 건너뜀: $WATCH_PLIST_SRC"
+    # 예전 plist는 KeepAlive=true라서 소스 삭제 후에도 실패 재시작 루프가 남을 수 있다.
+    launchctl bootout "$LAUNCH_DOMAIN" "$WATCH_PLIST_DST" >/dev/null 2>&1 || true
+    rm -f "$WATCH_PLIST_DST"
+    echo "✓ legacy Cursor watcher 정리: $WATCH_PLIST_DST"
   fi
 fi
 
@@ -394,6 +397,41 @@ print("✓ Claude SessionEnd 훅 추가")
 PYEOF
 else
   echo "✓ Claude settings 없음 — SessionEnd 훅 건너뜀"
+fi
+
+# --- Claude 자동 git push 훅 정리 ---
+if [ -f "$CLAUDE_SETTINGS" ]; then
+  python3 - <<'PYEOF'
+import json, os
+
+settings_path = os.path.expanduser("~/.claude/settings.json")
+
+with open(settings_path) as f:
+    s = json.load(f)
+
+changed = False
+hooks = s.get("hooks", {})
+
+for event, entries in list(hooks.items()):
+    if not isinstance(entries, list):
+        continue
+    for entry in entries:
+        if not isinstance(entry, dict) or not isinstance(entry.get("hooks"), list):
+            continue
+        before = len(entry["hooks"])
+        entry["hooks"] = [
+            h for h in entry["hooks"]
+            if "push-dotfiles.sh" not in h.get("command", "")
+        ]
+        changed = changed or len(entry["hooks"]) != before
+
+if changed:
+    with open(settings_path, "w") as f:
+        json.dump(s, f, indent=2, ensure_ascii=False)
+        f.write("\n")
+
+print("✓ Claude 자동 push 훅 정리")
+PYEOF
 fi
 
 # --- ssh config ---

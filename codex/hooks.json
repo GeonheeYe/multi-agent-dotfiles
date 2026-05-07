@@ -5,14 +5,6 @@
         "hooks": [
           {
             "type": "command",
-            "command": "/Users/geonhee/dotfiles/scripts/push-dotfiles.sh"
-          }
-        ]
-      },
-      {
-        "hooks": [
-          {
-            "type": "command",
             "command": "/opt/homebrew/bin/node /Users/geonhee/.config/ainc/anc-hook.js"
           }
         ]

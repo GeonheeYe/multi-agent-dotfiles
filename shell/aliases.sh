@@ -183,7 +183,6 @@ cc() {
   _dotfiles_pull
   if _require_cmd claude; then
     claude "$@"
-    _dotfiles_push
   else
     printf 'claude command not found\n' >&2
     return 127
@@ -194,7 +193,6 @@ ccd() {
   _dotfiles_pull
   if _require_cmd claude; then
     claude --dangerously-skip-permissions "$@"
-    _dotfiles_push
   else
     printf 'claude command not found\n' >&2
     return 127
@@ -205,7 +203,6 @@ ccr() {
   _dotfiles_pull
   if _require_cmd claude; then
     claude --resume --dangerously-skip-permissions "$@"
-    _dotfiles_push
   else
     printf 'claude command not found\n' >&2
     return 127
@@ -217,7 +214,6 @@ cdd() {
   _dotfiles_pull
   if _require_cmd codex; then
     codex --dangerously-bypass-approvals-and-sandbox "$@"
-    _dotfiles_push
   else
     printf 'codex command not found\n' >&2
     return 127
@@ -228,7 +224,6 @@ cdd-work() {
   _dotfiles_pull
   _run_codex_with_home "$CODEX_WORK_HOME" --dangerously-bypass-approvals-and-sandbox "$@"
   local exit_code=$?
-  _dotfiles_push
   return "$exit_code"
 }
 
@@ -236,7 +231,6 @@ cdd-personal() {
   _dotfiles_pull
   _run_codex_with_home "$CODEX_PERSONAL_HOME" --dangerously-bypass-approvals-and-sandbox "$@"
   local exit_code=$?
-  _dotfiles_push
   return "$exit_code"
 }
 
@@ -244,7 +238,6 @@ cdd-personal-login() {
   _dotfiles_pull
   _run_codex_with_home "$CODEX_PERSONAL_HOME" login "$@"
   local exit_code=$?
-  _dotfiles_push
   return "$exit_code"
 }
 
@@ -253,7 +246,6 @@ cu() {
   _dotfiles_pull
   if _require_cmd cursor; then
     cursor "$@"
-    _dotfiles_push
   else
     printf 'cursor command not found\n' >&2
     return 127
