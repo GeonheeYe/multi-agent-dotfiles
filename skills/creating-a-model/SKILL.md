@@ -1,4 +1,3 @@
-```
 ---
 name: devtools-model-management
 description: Guidelines for creating, migrating, and registering models in front_end/models/. Covers BUILD.gn, devtools_grd_files.gni, and entrypoints.
