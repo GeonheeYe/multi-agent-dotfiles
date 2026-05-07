@@ -30,13 +30,5 @@
     },
     "installLocation": "/home/geonheeye/.claude/plugins/marketplaces/chrome-devtools-plugins",
     "lastUpdated": "2026-05-06T23:00:26.072Z"
-  },
-  "ouroboros": {
-    "source": {
-      "source": "github",
-      "repo": "Q00/ouroboros"
-    },
-    "installLocation": "/Users/geonhee/.claude/plugins/marketplaces/ouroboros",
-    "lastUpdated": "2026-05-06T23:00:32.756Z"
   }
 }

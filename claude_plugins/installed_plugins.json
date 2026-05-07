@@ -40,16 +40,6 @@
         "lastUpdated": "2026-04-21T23:03:43.418Z",
         "gitCommitSha": "c2d8009ff75f76bce1ec4cf79c2467b50d81725e"
       }
-    ],
-    "ouroboros@ouroboros": [
-      {
-        "scope": "user",
-        "installPath": "/Users/geonhee/.claude/plugins/cache/ouroboros/ouroboros/0.28.2",
-        "version": "0.28.2",
-        "installedAt": "2026-04-10T16:35:23.569Z",
-        "lastUpdated": "2026-04-10T16:35:23.569Z",
-        "gitCommitSha": "ded5542846f39a6ec47aba4d80b8817212c9921c"
-      }
     ]
   }
 }
