@@ -30,8 +30,8 @@ if [ -d "/data/data/com.termux/files/home" ]; then
         OUTPUT_FILE="$OUTPUT_BASE_DIR/${TIMESTAMP}_${SESSION_SHORT}.md"
     fi
 else
-    KEEP_LOCAL_RAW=0
-    OUTPUT_BASE_DIR="$(mktemp -d "$SESSIONS_DIR/save-session.XXXXXX")"
+    KEEP_LOCAL_RAW=1
+    OUTPUT_BASE_DIR="$SESSIONS_DIR"
     OUTPUT_FILE="$OUTPUT_BASE_DIR/${TIMESTAMP}_${SESSION_SHORT}.md"
 fi
 

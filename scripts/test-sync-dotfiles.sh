@@ -34,14 +34,7 @@ test_runs_setup_when_head_changes() {
     git config user.name test
     git config user.email test@example.com
     printf 'one\n' > tracked.txt
-    git add tracked.txt
-    git commit -m 'init' >/dev/null
-    git push origin HEAD >/dev/null 2>&1
-  )
-
-  local setup_stub
-  setup_stub="$tmpdir/setup.sh"
-  cat > "$setup_stub" <<'EOF'
+    cat > setup.sh <<'EOF'
 #!/usr/bin/env bash
 set -euo pipefail
 count_file="${SETUP_COUNT_FILE:?}"
@@ -51,13 +44,15 @@ if [ -f "$count_file" ]; then
 fi
 printf '%s\n' "$((count + 1))" > "$count_file"
 EOF
-  chmod +x "$setup_stub"
+    chmod +x setup.sh
+    git add tracked.txt setup.sh
+    git commit -m 'init' >/dev/null
+    git push origin HEAD >/dev/null 2>&1
+  )
 
   local clone before
   clone="$tmpdir/clone"
   git clone "$remote" "$clone" >/dev/null 2>&1
-  cp "$setup_stub" "$clone/setup.sh"
-  chmod +x "$clone/setup.sh"
 
   before="$(git -C "$clone" rev-parse HEAD)"
 
@@ -93,14 +88,7 @@ test_skips_setup_when_head_unchanged() {
     git config user.name test
     git config user.email test@example.com
     printf 'one\n' > tracked.txt
-    git add tracked.txt
-    git commit -m 'init' >/dev/null
-    git push origin HEAD >/dev/null 2>&1
-  )
-
-  local setup_stub
-  setup_stub="$tmpdir/setup.sh"
-  cat > "$setup_stub" <<'EOF'
+    cat > setup.sh <<'EOF'
 #!/usr/bin/env bash
 set -euo pipefail
 count_file="${SETUP_COUNT_FILE:?}"
@@ -110,13 +98,15 @@ if [ -f "$count_file" ]; then
 fi
 printf '%s\n' "$((count + 1))" > "$count_file"
 EOF
-  chmod +x "$setup_stub"
+    chmod +x setup.sh
+    git add tracked.txt setup.sh
+    git commit -m 'init' >/dev/null
+    git push origin HEAD >/dev/null 2>&1
+  )
 
   local clone
   clone="$tmpdir/clone"
   git clone "$remote" "$clone" >/dev/null 2>&1
-  cp "$setup_stub" "$clone/setup.sh"
-  chmod +x "$clone/setup.sh"
 
   SETUP_COUNT_FILE="$tmpdir/count" DOTFILES="$clone" "$SYNC_SCRIPT"
 
