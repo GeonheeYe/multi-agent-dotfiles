@@ -85,7 +85,7 @@ fi
 temp_home="$(mktemp -d)"
 trap 'rm -rf "$temp_home"' EXIT
 mkdir -p "$temp_home/.codex" "$temp_home/bin"
-HOME="$temp_home" bash "$ROOT/setup.sh" >/dev/null 2>&1 || true
+HOME="$temp_home" DOTFILES_SKIP_LAUNCHD=1 bash "$ROOT/setup.sh" >/dev/null 2>&1 || true
 
 [ -f "$temp_home/bin/claude" ] || fail "setup should install ~/bin/claude wrapper"
 [ -f "$temp_home/bin/codex" ] || fail "setup should install ~/bin/codex wrapper"

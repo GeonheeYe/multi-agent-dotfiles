@@ -300,7 +300,7 @@ chmod +x "$HOME/bin/cdd-personal-login"
 echo "✓ ~/bin/cdd-personal-login"
 
 # --- Cursor agent-transcripts watcher (launchd, macOS) ---
-if [ "$(uname -s)" = "Darwin" ]; then
+if [ "$(uname -s)" = "Darwin" ] && [ "${DOTFILES_SKIP_LAUNCHD:-0}" != "1" ]; then
   mkdir -p "$DOTFILES/launchd" "$HOME/Library/LaunchAgents" "$HOME/cursor-sessions"
   WATCH_PLIST_SRC="$DOTFILES/launchd/com.geonhee.cursor-agent-transcripts-to-s20.plist"
   WATCH_PLIST_DST="$HOME/Library/LaunchAgents/com.geonhee.cursor-agent-transcripts-to-s20.plist"
@@ -474,7 +474,7 @@ else
 fi
 
 # --- Cursor agent-transcripts watcher (launchd 등록) ---
-if [[ "$(uname -s)" == "Darwin" ]]; then
+if [[ "$(uname -s)" == "Darwin" && "${DOTFILES_SKIP_LAUNCHD:-0}" != "1" ]]; then
   PLIST_DIR="$HOME/Library/LaunchAgents"
   PLIST_PATH="$PLIST_DIR/com.geonhee.watch-agent-transcripts.plist"
   WATCH_SCRIPT="$DOTFILES/scripts/watch-agent-transcripts.sh"
