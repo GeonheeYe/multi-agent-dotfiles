@@ -1,4 +1,6 @@
 #!/usr/bin/env python3
+from __future__ import annotations
+
 import json
 import os
 import re
@@ -9,7 +11,9 @@ from pathlib import Path
 # 참고: 이 dotfiles 버전은 간이 스크립트라 현재 메인 분류 로직은
 # workspace/scripts/process_longmemory_raw.py 쪽을 우선 사용한다.
 
-LONGMEMORY = Path('/data/data/com.termux/files/home/LONGMEMORY')
+TERMUX_HOME = Path('/data/data/com.termux/files/home')
+DEFAULT_LONGMEMORY = TERMUX_HOME / 'LONGMEMORY' if TERMUX_HOME.exists() else Path.home() / 'LONGMEMORY'
+LONGMEMORY = Path(os.environ.get('LONGMEMORY_DIR', str(DEFAULT_LONGMEMORY))).expanduser()
 RAW_DIR = LONGMEMORY / 'raw'
 INBOX_DIR = LONGMEMORY / 'inbox'
 WIKI_DIR = LONGMEMORY / 'wiki' / 'projects'

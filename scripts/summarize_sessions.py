@@ -3,14 +3,17 @@
 from __future__ import annotations
 
 import json
+import os
 import re
 from datetime import datetime, timezone
 from pathlib import Path
 from urllib import request as url_request
 
-LONGMEMORY = Path('/data/data/com.termux/files/home/LONGMEMORY')
+TERMUX_HOME = Path('/data/data/com.termux/files/home')
+DEFAULT_HOME = TERMUX_HOME if TERMUX_HOME.exists() else Path.home()
+LONGMEMORY = Path(os.environ.get('LONGMEMORY_DIR', str(DEFAULT_HOME / 'LONGMEMORY'))).expanduser()
 PROJECTS_DIR = LONGMEMORY / 'wiki' / 'projects'
-OPENCLAW_CONFIG = Path('/data/data/com.termux/files/home/.openclaw/openclaw.json')
+OPENCLAW_CONFIG = Path(os.environ.get('OPENCLAW_CONFIG', str(DEFAULT_HOME / '.openclaw/openclaw.json'))).expanduser()
 SUMMARIZED_FILENAME = '.summarized_raw.txt'
 RAW_RE = re.compile(r'^\d{4}-\d{2}-\d{2}_\d{2}-\d{2}-\d{2}_[a-z0-9]{1,32}\.md$')
 MIN_CONTENT_LEN = 100

@@ -9,3 +9,10 @@ Host geonhee-s20
     StrictHostKeyChecking no
     ServerAliveInterval 30
     ServerAliveCountMax 3
+
+Host geonhee-ubuntu
+    HostName 100.71.103.11
+    Port 22
+    User geonhee
+    ServerAliveInterval 30
+    ServerAliveCountMax 3

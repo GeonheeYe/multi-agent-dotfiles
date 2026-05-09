@@ -18,8 +18,17 @@ echo "[save-session] transcript_path: $TRANSCRIPT_PATH" >&2
 TIMESTAMP=$(date +"%Y-%m-%d_%H-%M-%S")
 SESSION_SHORT="${SESSION_ID:0:8}"
 
+TERMUX_HOME="/data/data/com.termux/files/home"
+if [ -n "${LONGMEMORY_DIR:-}" ]; then
+    LOCAL_LONGMEMORY_DIR="$LONGMEMORY_DIR"
+elif [ -d "$TERMUX_HOME" ]; then
+    LOCAL_LONGMEMORY_DIR="$TERMUX_HOME/LONGMEMORY"
+else
+    LOCAL_LONGMEMORY_DIR="$HOME/LONGMEMORY"
+fi
+
 if [ -d "/data/data/com.termux/files/home" ]; then
-    OUTPUT_BASE_DIR="/data/data/com.termux/files/home/LONGMEMORY/raw/unprocessed"
+    OUTPUT_BASE_DIR="$LOCAL_LONGMEMORY_DIR/raw/unprocessed"
     KEEP_LOCAL_RAW=1
     mkdir -p "$OUTPUT_BASE_DIR"
     # Cursor watcher fires multiple times while a jsonl grows.
@@ -137,27 +146,50 @@ fi
 
 echo "[save-session] raw 저장: $OUTPUT_FILE" >&2
 
-REMOTE_HOST="YOUR_S20_HOST"
-REMOTE_DIR="~/LONGMEMORY"
+REMOTE_ENABLED="${LONGMEMORY_REMOTE_ENABLED:-1}"
+REMOTE_HOST="${LONGMEMORY_REMOTE_HOST:-geonhee-ubuntu}"
+REMOTE_PORT="${LONGMEMORY_REMOTE_PORT:-22}"
+REMOTE_DIR="${LONGMEMORY_REMOTE_DIR:-/home/geonhee/LONGMEMORY}"
+REMOTE_RAW_DIR="${LONGMEMORY_REMOTE_RAW_DIR:-$REMOTE_DIR/raw/unprocessed}"
+REMOTE_BIN_DIR="${LONGMEMORY_REMOTE_BIN_DIR:-$REMOTE_DIR/bin}"
+REMOTE_PROCESS_SCRIPT="${LONGMEMORY_REMOTE_PROCESS_SCRIPT:-$REMOTE_BIN_DIR/process_longmemory_raw.py}"
+REMOTE_UPDATE_SCRIPT="${LONGMEMORY_REMOTE_UPDATE_SCRIPT:-$REMOTE_BIN_DIR/update_longmemory_wiki.py}"
+REMOTE_PROCESS_LOG="${LONGMEMORY_REMOTE_PROCESS_LOG:-$REMOTE_DIR/process.log}"
 SESSION_SHORT="${SESSION_ID:0:8}"
 
-# SCP 전송은 훅 타임아웃(~60s)을 피하려고 백그라운드로 분리
-# nohup + disown 으로 부모 종료 후에도 살아남도록 한다
-nohup bash -c '
-    LOG_FILE="'"$LOG_FILE"'"
-    OUTPUT_FILE="'"$OUTPUT_FILE"'"
-    OUTPUT_BASE_DIR="'"$OUTPUT_BASE_DIR"'"
-    KEEP_LOCAL_RAW="'"$KEEP_LOCAL_RAW"'"
-    REMOTE_HOST="'"$REMOTE_HOST"'"
-    REMOTE_DIR="'"$REMOTE_DIR"'"
-    SESSION_SHORT="'"$SESSION_SHORT"'"
+if [ "$REMOTE_ENABLED" = "0" ]; then
+    echo "[save-session] remote 전송 비활성화 (LONGMEMORY_REMOTE_ENABLED=0)" >&2
+    exit 0
+fi
 
+_shell_quote() {
+    printf "%q" "$1"
+}
+
+_run_remote_transfer() {
     exec >>"$LOG_FILE" 2>&1
 
     echo "[save-session:bg] SCP 시작 session=$SESSION_SHORT pid=$$"
 
-    ssh -o ConnectTimeout=5 -o BatchMode=yes -o StrictHostKeyChecking=no \
-        "$REMOTE_HOST" "mkdir -p $REMOTE_DIR/raw"
+    local remote_raw_q
+    local remote_bin_q
+    local remote_dir_q
+    local remote_file
+    local remote_file_q
+    local process_script_q
+    local update_script_q
+    local process_log_q
+    remote_raw_q="$(_shell_quote "$REMOTE_RAW_DIR")"
+    remote_bin_q="$(_shell_quote "$REMOTE_BIN_DIR")"
+    remote_dir_q="$(_shell_quote "$REMOTE_DIR")"
+    remote_file="$REMOTE_RAW_DIR/$(basename "$OUTPUT_FILE")"
+    remote_file_q="$(_shell_quote "$remote_file")"
+    process_script_q="$(_shell_quote "$REMOTE_PROCESS_SCRIPT")"
+    update_script_q="$(_shell_quote "$REMOTE_UPDATE_SCRIPT")"
+    process_log_q="$(_shell_quote "$REMOTE_PROCESS_LOG")"
+
+    ssh -p "$REMOTE_PORT" -o ConnectTimeout=5 -o BatchMode=yes -o StrictHostKeyChecking=no \
+        "$REMOTE_HOST" "mkdir -p $remote_raw_q $remote_bin_q"
     mkdir_rc=$?
     if [ $mkdir_rc -ne 0 ]; then
         echo "[save-session:bg] ssh mkdir 실패 rc=$mkdir_rc"
@@ -165,16 +197,15 @@ nohup bash -c '
 
     scp_success=0
     for attempt in 1 2 3; do
-        scp -P 8022 -o ConnectTimeout=15 -o BatchMode=yes -o StrictHostKeyChecking=no \
-            "$OUTPUT_FILE" "${REMOTE_HOST}:${REMOTE_DIR}/raw/"
+        scp -P "$REMOTE_PORT" -o ConnectTimeout=15 -o BatchMode=yes -o StrictHostKeyChecking=no \
+            "$OUTPUT_FILE" "${REMOTE_HOST}:${REMOTE_RAW_DIR}/"
         rc=$?
         if [ $rc -eq 0 ]; then
-            echo "[save-session:bg] SCP 전송 완료 (시도 ${attempt}, rc=0) → ${REMOTE_HOST}:${REMOTE_DIR}/raw/"
+            echo "[save-session:bg] SCP 전송 완료 (시도 ${attempt}, rc=0) → ${REMOTE_HOST}:${REMOTE_RAW_DIR}/"
             scp_success=1
-            # raw 수신 직후 분류 스크립트 실행
-            ssh -o ConnectTimeout=10 -o BatchMode=yes -o StrictHostKeyChecking=no \
-                "$REMOTE_HOST" "python3 ~/.openclaw/workspace/scripts/process_longmemory_raw.py >> ~/LONGMEMORY/process.log 2>&1" &
-            echo "[save-session:bg] process_longmemory_raw.py 트리거됨"
+            ssh -p "$REMOTE_PORT" -o ConnectTimeout=10 -o BatchMode=yes -o StrictHostKeyChecking=no \
+                "$REMOTE_HOST" "if [ -f $process_script_q ]; then LONGMEMORY_DIR=$remote_dir_q python3 $process_script_q $remote_file_q >> $process_log_q 2>&1; else echo '[save-session:bg] missing process script: $REMOTE_PROCESS_SCRIPT' >> $process_log_q; fi; if [ -f $update_script_q ]; then LONGMEMORY_DIR=$remote_dir_q python3 $update_script_q >> $process_log_q 2>&1; fi"
+            echo "[save-session:bg] LONGMEMORY 처리 스크립트 트리거됨"
             break
         fi
         echo "[save-session:bg] SCP 실패 (시도 ${attempt}, rc=${rc})"
@@ -188,8 +219,17 @@ nohup bash -c '
         rm -rf "$OUTPUT_BASE_DIR"
         echo "[save-session:bg] 임시 raw 정리: $OUTPUT_BASE_DIR"
     fi
-    echo "[$(date '"'"'+%Y-%m-%d %H:%M:%S'"'"')] === end session=$SESSION_SHORT ==="
-' </dev/null >/dev/null 2>&1 &
-disown 2>/dev/null || true
+    echo "[$(date '+%Y-%m-%d %H:%M:%S')] === end session=$SESSION_SHORT ==="
+}
 
-echo "[save-session] SCP 백그라운드 분리 (session=$SESSION_SHORT), 훅 즉시 종료" >&2
+if [ "${SAVE_SESSION_SCP_SYNC:-0}" = "1" ]; then
+    _run_remote_transfer
+    echo "[save-session] SCP 동기 실행 완료 (session=$SESSION_SHORT)" >&2
+else
+    export LOG_FILE OUTPUT_FILE OUTPUT_BASE_DIR KEEP_LOCAL_RAW
+    export REMOTE_HOST REMOTE_PORT REMOTE_DIR REMOTE_RAW_DIR REMOTE_BIN_DIR
+    export REMOTE_PROCESS_SCRIPT REMOTE_UPDATE_SCRIPT REMOTE_PROCESS_LOG SESSION_SHORT
+    nohup bash -c "$(declare -f _shell_quote _run_remote_transfer); _run_remote_transfer" </dev/null >/dev/null 2>&1 &
+    disown 2>/dev/null || true
+    echo "[save-session] SCP 백그라운드 분리 (session=$SESSION_SHORT), 훅 즉시 종료" >&2
+fi

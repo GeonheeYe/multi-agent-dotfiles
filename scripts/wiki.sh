@@ -4,7 +4,7 @@
 #   wiki                -> 전체 프로젝트 목록
 #   wiki <키워드>       -> 프로젝트 퍼지 매칭 후 context/overview/timeline 중 하나 출력
 # 기본 동작:
-#   1) S20(YOUR_S20_HOST) 우선
+#   1) Ubuntu(geonhee-ubuntu) 우선
 #   2) 실패 시 로컬 ~/LONGMEMORY fallback
 
 set -euo pipefail
@@ -27,10 +27,12 @@ LONGMEMORY_CANDIDATES+=(
   "$HOME/LONGMEMORY"
 )
 
-WIKI_INDEX_REMOTE="/data/data/com.termux/files/home/LONGMEMORY/wiki/index.md"
-WIKI_BASE_REMOTE="/data/data/com.termux/files/home/LONGMEMORY/wiki/projects"
-S20_HOST="${S20_HOST:-YOUR_S20_HOST}"
-SSH_OPTS=(-o ConnectTimeout=5 -o BatchMode=yes)
+REMOTE_HOST="${LONGMEMORY_REMOTE_HOST:-geonhee-ubuntu}"
+REMOTE_PORT="${LONGMEMORY_REMOTE_PORT:-22}"
+REMOTE_DIR="${LONGMEMORY_REMOTE_DIR:-/home/geonhee/LONGMEMORY}"
+WIKI_INDEX_REMOTE="$REMOTE_DIR/wiki/index.md"
+WIKI_BASE_REMOTE="$REMOTE_DIR/wiki/projects"
+SSH_OPTS=(-p "$REMOTE_PORT" -o ConnectTimeout=5 -o BatchMode=yes)
 CONTEXT_FILES=(context.md overview.md timeline.md tasks.md decisions.md summaries.md)
 
 _parse_index() {
@@ -58,7 +60,23 @@ _has_local_wiki() {
 }
 
 _has_remote_wiki() {
-  ssh "${SSH_OPTS[@]}" "$S20_HOST" "test -f '$WIKI_INDEX_REMOTE' || test -d '$WIKI_BASE_REMOTE'" >/dev/null 2>&1
+  ssh "${SSH_OPTS[@]}" "$REMOTE_HOST" "test -f '$WIKI_INDEX_REMOTE' || test -d '$WIKI_BASE_REMOTE'" >/dev/null 2>&1
+}
+
+_same_local_dir() {
+  local left="$1"
+  local right="$2"
+  local left_real
+  local right_real
+  [ -n "$left" ] && [ -n "$right" ] || return 1
+  [ -d "$left" ] && [ -d "$right" ] || return 1
+  left_real="$(cd "$left" 2>/dev/null && pwd -P)" || return 1
+  right_real="$(cd "$right" 2>/dev/null && pwd -P)" || return 1
+  [ "$left_real" = "$right_real" ]
+}
+
+_prefer_local_wiki() {
+  _has_local_wiki && _same_local_dir "$LOCAL_LONGMEMORY" "$REMOTE_DIR"
 }
 
 _get_project_list_local() {
@@ -78,17 +96,21 @@ _get_project_list_local() {
 _get_project_list_remote() {
   local tmp
   tmp="$(mktemp)"
-  if ssh "${SSH_OPTS[@]}" "$S20_HOST" "cat '$WIKI_INDEX_REMOTE'" >"$tmp" 2>/dev/null; then
+  if ssh "${SSH_OPTS[@]}" "$REMOTE_HOST" "cat '$WIKI_INDEX_REMOTE'" >"$tmp" 2>/dev/null; then
     _parse_index "$tmp"
     rm -f "$tmp"
     return 0
   fi
   rm -f "$tmp"
 
-  ssh "${SSH_OPTS[@]}" "$S20_HOST" "find '$WIKI_BASE_REMOTE' -mindepth 1 -maxdepth 1 -type d -exec basename {} \\; | sort" 2>/dev/null
+  ssh "${SSH_OPTS[@]}" "$REMOTE_HOST" "find '$WIKI_BASE_REMOTE' -mindepth 1 -maxdepth 1 -type d -exec basename {} \\; | sort" 2>/dev/null
 }
 
 _get_project_list() {
+  if _prefer_local_wiki; then
+    _get_project_list_local && return 0
+  fi
+
   if _has_remote_wiki; then
     _get_project_list_remote && return 0
   fi
@@ -97,7 +119,7 @@ _get_project_list() {
     _get_project_list_local && return 0
   fi
 
-  printf 'S20에도 연결할 수 없고 로컬 LONGMEMORY도 찾지 못했습니다.\n' >&2
+  printf 'Ubuntu에도 연결할 수 없고 로컬 LONGMEMORY도 찾지 못했습니다.\n' >&2
   printf '확인한 로컬 후보 경로: %s\n' "${LONGMEMORY_CANDIDATES[*]}" >&2
   return 1
 }
@@ -125,8 +147,8 @@ _fetch_context_remote() {
   local proj="$1"
   local name
   for name in "${CONTEXT_FILES[@]}"; do
-    if ssh "${SSH_OPTS[@]}" "$S20_HOST" "test -f '$WIKI_BASE_REMOTE/$proj/$name'" >/dev/null 2>&1; then
-      ssh "${SSH_OPTS[@]}" "$S20_HOST" "cat '$WIKI_BASE_REMOTE/$proj/$name'"
+    if ssh "${SSH_OPTS[@]}" "$REMOTE_HOST" "test -f '$WIKI_BASE_REMOTE/$proj/$name'" >/dev/null 2>&1; then
+      ssh "${SSH_OPTS[@]}" "$REMOTE_HOST" "cat '$WIKI_BASE_REMOTE/$proj/$name'"
       return 0
     fi
   done
@@ -135,6 +157,9 @@ _fetch_context_remote() {
 
 _fetch_context() {
   local proj="$1"
+  if _prefer_local_wiki && _fetch_context_local "$proj"; then
+    return 0
+  fi
   if _has_remote_wiki && _fetch_context_remote "$proj"; then
     return 0
   fi
@@ -153,7 +178,7 @@ keyword="$1"
 all_projects="$(_get_project_list 2>/dev/null || true)"
 
 if [ -z "$all_projects" ]; then
-  printf '프로젝트 목록을 가져올 수 없습니다. S20 연결 상태를 먼저 확인해 주세요. 로컬 LONGMEMORY는 fallback입니다.\n' >&2
+  printf '프로젝트 목록을 가져올 수 없습니다. Ubuntu 연결 상태를 먼저 확인해 주세요. 로컬 LONGMEMORY는 fallback입니다.\n' >&2
   exit 1
 fi
 

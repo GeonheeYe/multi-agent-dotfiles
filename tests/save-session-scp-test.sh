@@ -13,7 +13,7 @@ assert_file_contains() {
   local file="$1"
   local needle="$2"
   local message="$3"
-  if ! grep -Fq "$needle" "$file"; then
+  if ! grep -Fq -- "$needle" "$file"; then
     fail "$message"
   fi
 }
@@ -31,7 +31,7 @@ cat >"$transcript" <<'EOF'
 EOF
 
 printf '{"session_id":"abc12345","transcript_path":"%s","source":"codex"}\n' "$transcript" \
-  | HOME="$temp_home" SAVE_SESSION_DIR="$temp_home/codex-sessions" bash "$SCRIPT" >/dev/null 2>&1
+  | HOME="$temp_home" SAVE_SESSION_DIR="$temp_home/codex-sessions" LONGMEMORY_REMOTE_ENABLED=0 bash "$SCRIPT" >/dev/null 2>&1
 
 saved_file="$(find "$temp_home/codex-sessions" -maxdepth 1 -type f -name '*.md' | head -n 1)"
 [ -n "$saved_file" ] || fail "save script should create a markdown transcript"
@@ -39,5 +39,30 @@ assert_file_contains "$saved_file" "## 사용자" "saved transcript should inclu
 assert_file_contains "$saved_file" "사용자 질문" "saved transcript should include user text"
 assert_file_contains "$saved_file" "## Assistant" "saved transcript should include assistant section"
 assert_file_contains "$saved_file" "어시스턴트 답변" "saved transcript should include assistant text"
+
+fakebin="$temp_home/fakebin"
+remote_log="$temp_home/remote.log"
+mkdir -p "$fakebin"
+
+cat >"$fakebin/ssh" <<'EOF'
+#!/usr/bin/env bash
+printf 'ssh %s\n' "$*" >>"$FAKE_REMOTE_LOG"
+exit 0
+EOF
+cat >"$fakebin/scp" <<'EOF'
+#!/usr/bin/env bash
+printf 'scp %s\n' "$*" >>"$FAKE_REMOTE_LOG"
+exit 0
+EOF
+chmod +x "$fakebin/ssh" "$fakebin/scp"
+
+printf '{"session_id":"abc12345","transcript_path":"%s","source":"codex"}\n' "$transcript" \
+  | HOME="$temp_home" SAVE_SESSION_DIR="$temp_home/codex-sessions" SAVE_SESSION_SCP_SYNC=1 FAKE_REMOTE_LOG="$remote_log" PATH="$fakebin:$PATH" bash "$SCRIPT" >/dev/null 2>&1
+
+assert_file_contains "$remote_log" "geonhee-ubuntu" "remote host should default to geonhee-ubuntu"
+assert_file_contains "$remote_log" "-P 22" "scp should use Ubuntu SSH port 22 by default"
+assert_file_contains "$remote_log" "/home/geonhee/LONGMEMORY/raw/unprocessed/" "remote upload should target LONGMEMORY raw/unprocessed"
+assert_file_contains "$remote_log" "process_longmemory_raw.py" "remote processing should classify the uploaded raw session"
+assert_file_contains "$remote_log" "update_longmemory_wiki.py" "remote processing should refresh wiki metadata"
 
 echo "PASS"
