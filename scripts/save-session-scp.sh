@@ -4,6 +4,7 @@
 SESSIONS_DIR="${SAVE_SESSION_DIR:-$HOME/claude-sessions}"
 mkdir -p "$SESSIONS_DIR"
 LOG_FILE="$SESSIONS_DIR/save-session.log"
+SAVE_SESSION_SCRIPT_DIR="$(cd "$(dirname "${BASH_SOURCE[0]}")" && pwd)"
 exec 2>>"$LOG_FILE"
 
 INPUT=$(cat)
@@ -195,6 +196,19 @@ _run_remote_transfer() {
         echo "[save-session:bg] ssh mkdir 실패 rc=$mkdir_rc"
     fi
 
+    # Keep the canonical LONGMEMORY processor on the remote host in sync with this dotfiles checkout.
+    # This makes sessions sent from any device use the same classifier/wiki updater/loader behavior.
+    local script_dir
+    script_dir="$SAVE_SESSION_SCRIPT_DIR"
+    for local_script in process_longmemory_raw.py update_longmemory_wiki.py longmemory_loader.py; do
+        if [ -f "$script_dir/$local_script" ]; then
+            scp -P "$REMOTE_PORT" -o ConnectTimeout=15 -o BatchMode=yes -o StrictHostKeyChecking=no \
+                "$script_dir/$local_script" "${REMOTE_HOST}:${REMOTE_BIN_DIR}/" \
+                && echo "[save-session:bg] remote script synced: $local_script" \
+                || echo "[save-session:bg] remote script sync failed: $local_script"
+        fi
+    done
+
     scp_success=0
     for attempt in 1 2 3; do
         scp -P "$REMOTE_PORT" -o ConnectTimeout=15 -o BatchMode=yes -o StrictHostKeyChecking=no \
@@ -226,7 +240,7 @@ if [ "${SAVE_SESSION_SCP_SYNC:-0}" = "1" ]; then
     _run_remote_transfer
     echo "[save-session] SCP 동기 실행 완료 (session=$SESSION_SHORT)" >&2
 else
-    export LOG_FILE OUTPUT_FILE OUTPUT_BASE_DIR KEEP_LOCAL_RAW
+    export LOG_FILE OUTPUT_FILE OUTPUT_BASE_DIR KEEP_LOCAL_RAW SAVE_SESSION_SCRIPT_DIR
     export REMOTE_HOST REMOTE_PORT REMOTE_DIR REMOTE_RAW_DIR REMOTE_BIN_DIR
     export REMOTE_PROCESS_SCRIPT REMOTE_UPDATE_SCRIPT REMOTE_PROCESS_LOG SESSION_SHORT
     nohup bash -c "$(declare -f _shell_quote _run_remote_transfer); _run_remote_transfer" </dev/null >/dev/null 2>&1 &

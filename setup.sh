@@ -73,6 +73,13 @@ if [ -d "$HOME/.cursor" ]; then
   ln -sfn "$DOTFILES/skills" ~/.cursor/skills && echo "✓ ~/.cursor/skills"
 fi
 
+# Hermes Agent user skills: keep the personal llm-wiki override in sync across machines.
+# Hermes also has a builtin llm-wiki; this user skill intentionally carries the LONGMEMORY contract.
+if [ -d "$HOME/.hermes" ]; then
+  mkdir -p "$HOME/.hermes/skills"
+  ln -sfn "$DOTFILES/skills/llm-wiki" "$HOME/.hermes/skills/llm-wiki" && echo "✓ ~/.hermes/skills/llm-wiki"
+fi
+
 # --- commands ---
 if [ -d "$HOME/.claude" ]; then
   rm -rf ~/.claude/commands

@@ -1,201 +1,75 @@
 #!/usr/bin/env bash
-# LONGMEMORY wiki 조회 스크립트
+# LONGMEMORY wiki 조회 래퍼
 # 사용법:
-#   wiki                -> 전체 프로젝트 목록
-#   wiki <키워드>       -> 프로젝트 퍼지 매칭 후 context/overview/timeline 중 하나 출력
-# 기본 동작:
-#   1) Ubuntu(geonhee-ubuntu) 우선
-#   2) 실패 시 로컬 ~/LONGMEMORY fallback
-
+#   wiki                -> 전체 프로젝트/토픽 목록
+#   wiki <키워드>       -> longmemory_loader.py로 프로젝트/토픽 컨텍스트 JSON 출력
+#   wiki --text <키워드> -> 사람이 읽기 쉬운 markdown으로 출력
 set -euo pipefail
+
+SCRIPT_DIR="$(cd "$(dirname "${BASH_SOURCE[0]}")" && pwd)"
+DOTFILES="${DOTFILES:-$(cd "$SCRIPT_DIR/.." && pwd)}"
+LOADER="${LONGMEMORY_LOADER:-$DOTFILES/scripts/longmemory_loader.py}"
 
 if command -v getent >/dev/null 2>&1; then
   REAL_HOME="$(getent passwd "$(id -un)" 2>/dev/null | cut -d: -f6 || true)"
 else
   REAL_HOME="$HOME"
 fi
-if [ -z "$REAL_HOME" ]; then
-  REAL_HOME="$HOME"
+if [ -n "${REAL_HOME:-}" ] && [ -z "${LONGMEMORY_DIR:-}" ]; then
+  export LONGMEMORY_DIR="$REAL_HOME/LONGMEMORY"
 fi
 
-LONGMEMORY_CANDIDATES=()
-if [ -n "${LONGMEMORY_DIR:-}" ]; then
-  LONGMEMORY_CANDIDATES+=("$LONGMEMORY_DIR")
+if [ ! -f "$LOADER" ]; then
+  printf 'longmemory_loader.py를 찾을 수 없습니다: %s\n' "$LOADER" >&2
+  exit 1
 fi
-LONGMEMORY_CANDIDATES+=(
-  "$REAL_HOME/LONGMEMORY"
-  "$HOME/LONGMEMORY"
-)
-
-REMOTE_HOST="${LONGMEMORY_REMOTE_HOST:-geonhee-ubuntu}"
-REMOTE_PORT="${LONGMEMORY_REMOTE_PORT:-22}"
-REMOTE_DIR="${LONGMEMORY_REMOTE_DIR:-/home/geonhee/LONGMEMORY}"
-WIKI_INDEX_REMOTE="$REMOTE_DIR/wiki/index.md"
-WIKI_BASE_REMOTE="$REMOTE_DIR/wiki/projects"
-SSH_OPTS=(-p "$REMOTE_PORT" -o ConnectTimeout=5 -o BatchMode=yes)
-CONTEXT_FILES=(context.md overview.md timeline.md tasks.md decisions.md summaries.md)
-
-_parse_index() {
-  grep -E '^- \[' "$1" | grep './projects/' | sed 's/^- \[//;s/\].*//'
-}
-
-_resolve_local_longmemory() {
-  local candidate
-  for candidate in "${LONGMEMORY_CANDIDATES[@]}"; do
-    [ -n "$candidate" ] || continue
-    if [ -f "$candidate/wiki/index.md" ] || [ -d "$candidate/wiki/projects" ]; then
-      printf '%s\n' "$candidate"
-      return 0
-    fi
-  done
-  return 1
-}
-
-LOCAL_LONGMEMORY="$( _resolve_local_longmemory || true )"
-WIKI_INDEX_LOCAL="${LOCAL_LONGMEMORY:+$LOCAL_LONGMEMORY/wiki/index.md}"
-WIKI_BASE_LOCAL="${LOCAL_LONGMEMORY:+$LOCAL_LONGMEMORY/wiki/projects}"
-
-_has_local_wiki() {
-  [ -n "$LOCAL_LONGMEMORY" ] && { [ -f "$WIKI_INDEX_LOCAL" ] || [ -d "$WIKI_BASE_LOCAL" ]; }
-}
-
-_has_remote_wiki() {
-  ssh "${SSH_OPTS[@]}" "$REMOTE_HOST" "test -f '$WIKI_INDEX_REMOTE' || test -d '$WIKI_BASE_REMOTE'" >/dev/null 2>&1
-}
-
-_same_local_dir() {
-  local left="$1"
-  local right="$2"
-  local left_real
-  local right_real
-  [ -n "$left" ] && [ -n "$right" ] || return 1
-  [ -d "$left" ] && [ -d "$right" ] || return 1
-  left_real="$(cd "$left" 2>/dev/null && pwd -P)" || return 1
-  right_real="$(cd "$right" 2>/dev/null && pwd -P)" || return 1
-  [ "$left_real" = "$right_real" ]
-}
-
-_prefer_local_wiki() {
-  _has_local_wiki && _same_local_dir "$LOCAL_LONGMEMORY" "$REMOTE_DIR"
-}
-
-_get_project_list_local() {
-  if [ -f "$WIKI_INDEX_LOCAL" ]; then
-    _parse_index "$WIKI_INDEX_LOCAL"
-    return 0
-  fi
-
-  if [ -d "$WIKI_BASE_LOCAL" ]; then
-    find "$WIKI_BASE_LOCAL" -mindepth 1 -maxdepth 1 -type d -exec basename {} \; | sort
-    return 0
-  fi
-
-  return 1
-}
-
-_get_project_list_remote() {
-  local tmp
-  tmp="$(mktemp)"
-  if ssh "${SSH_OPTS[@]}" "$REMOTE_HOST" "cat '$WIKI_INDEX_REMOTE'" >"$tmp" 2>/dev/null; then
-    _parse_index "$tmp"
-    rm -f "$tmp"
-    return 0
-  fi
-  rm -f "$tmp"
-
-  ssh "${SSH_OPTS[@]}" "$REMOTE_HOST" "find '$WIKI_BASE_REMOTE' -mindepth 1 -maxdepth 1 -type d -exec basename {} \\; | sort" 2>/dev/null
-}
-
-_get_project_list() {
-  if _prefer_local_wiki; then
-    _get_project_list_local && return 0
-  fi
-
-  if _has_remote_wiki; then
-    _get_project_list_remote && return 0
-  fi
-
-  if _has_local_wiki; then
-    _get_project_list_local && return 0
-  fi
-
-  printf 'Ubuntu에도 연결할 수 없고 로컬 LONGMEMORY도 찾지 못했습니다.\n' >&2
-  printf '확인한 로컬 후보 경로: %s\n' "${LONGMEMORY_CANDIDATES[*]}" >&2
-  return 1
-}
-
-_pick_context_file_local() {
-  local proj="$1"
-  local name
-  for name in "${CONTEXT_FILES[@]}"; do
-    if [ -f "$WIKI_BASE_LOCAL/$proj/$name" ]; then
-      printf '%s\n' "$WIKI_BASE_LOCAL/$proj/$name"
-      return 0
-    fi
-  done
-  return 1
-}
-
-_fetch_context_local() {
-  local proj="$1"
-  local file
-  file="$(_pick_context_file_local "$proj")" || return 1
-  cat "$file"
-}
-
-_fetch_context_remote() {
-  local proj="$1"
-  local name
-  for name in "${CONTEXT_FILES[@]}"; do
-    if ssh "${SSH_OPTS[@]}" "$REMOTE_HOST" "test -f '$WIKI_BASE_REMOTE/$proj/$name'" >/dev/null 2>&1; then
-      ssh "${SSH_OPTS[@]}" "$REMOTE_HOST" "cat '$WIKI_BASE_REMOTE/$proj/$name'"
-      return 0
-    fi
-  done
-  return 1
-}
-
-_fetch_context() {
-  local proj="$1"
-  if _prefer_local_wiki && _fetch_context_local "$proj"; then
-    return 0
-  fi
-  if _has_remote_wiki && _fetch_context_remote "$proj"; then
-    return 0
-  fi
-  if _has_local_wiki && _fetch_context_local "$proj"; then
-    return 0
-  fi
-  return 1
-}
 
 if [ $# -eq 0 ]; then
-  _get_project_list
-  exit 0
+  exec python3 "$LOADER" list
 fi
 
-keyword="$1"
-all_projects="$(_get_project_list 2>/dev/null || true)"
-
-if [ -z "$all_projects" ]; then
-  printf '프로젝트 목록을 가져올 수 없습니다. Ubuntu 연결 상태를 먼저 확인해 주세요. 로컬 LONGMEMORY는 fallback입니다.\n' >&2
-  exit 1
+TEXT_MODE=0
+if [ "${1:-}" = "--text" ]; then
+  TEXT_MODE=1
+  shift
 fi
 
-matches="$(printf '%s\n' "$all_projects" | grep -i "$keyword" || true)"
-match_count="$(printf '%s\n' "$matches" | grep -c '[^[:space:]]' || true)"
-
-if [ "$match_count" -eq 0 ]; then
-  printf '일치하는 프로젝트가 없습니다: %s\n\n사용 가능한 프로젝트:\n%s\n' \
-    "$keyword" "$all_projects" >&2
-  exit 1
-elif [ "$match_count" -eq 1 ]; then
-  matched="$(printf '%s' "$matches" | xargs)"
-  _fetch_context "$matched" || {
-    printf '읽을 수 있는 위키 파일이 없습니다: %s\n' "$matched" >&2
-    exit 1
-  }
-else
-  printf '여러 프로젝트가 매칭됩니다:\n%s\n\n정확한 이름을 지정해 주세요.\n' "$matches" >&2
-  exit 1
+keyword="${1:-}"
+if [ -z "$keyword" ]; then
+  exec python3 "$LOADER" list
 fi
+
+if [ "$TEXT_MODE" != "1" ]; then
+  exec python3 "$LOADER" load "$keyword"
+fi
+
+python3 - "$LOADER" "$keyword" <<'PY'
+import json
+import subprocess
+import sys
+
+loader, keyword = sys.argv[1], sys.argv[2]
+proc = subprocess.run([sys.executable, loader, 'load', keyword], text=True, stdout=subprocess.PIPE, stderr=subprocess.PIPE)
+if proc.returncode != 0 and not proc.stdout.strip():
+    sys.stderr.write(proc.stderr)
+    raise SystemExit(proc.returncode)
+try:
+    data = json.loads(proc.stdout)
+except Exception:
+    sys.stdout.write(proc.stdout)
+    sys.stderr.write(proc.stderr)
+    raise SystemExit(proc.returncode)
+
+if not data.get('ok'):
+    print(json.dumps(data, ensure_ascii=False, indent=2))
+    raise SystemExit(proc.returncode)
+
+print(f"# {data.get('slug')} ({data.get('kind')})")
+print(f"\n- source: {data.get('source')}\n- base: {data.get('base')}\n")
+for name, text in data.get('files', {}).items():
+    print(f"\n## {name}\n")
+    print(text.rstrip())
+for name, text in data.get('recent_sessions', {}).items():
+    print(f"\n## recent/{name}\n")
+    print(text.rstrip())
+PY
