@@ -5,8 +5,9 @@
 DOTFILES="$(cd "$(dirname "$0")/.." && pwd)"
 SECRETS="$DOTFILES/mcp/secrets.json"
 SERVERS="$DOTFILES/mcp/servers.json"
-CLAUDE_JSON="$HOME/.claude.json"
-CODEX_TOML="$HOME/.codex/config.toml"
+TARGET_HOME="${MCP_TARGET_HOME:-$(cd "$DOTFILES/.." && pwd)}"
+CLAUDE_JSON="$TARGET_HOME/.claude.json"
+CODEX_TOML="$TARGET_HOME/.codex/config.toml"
 
 if [ ! -f "$SECRETS" ]; then
   echo "❌ mcp/secrets.json 없음 — secrets.json.example 참고해서 만들어주세요"
@@ -88,6 +89,12 @@ for name, cfg in servers['mcpServers'].items():
     if cfg.get('args'):
         args_str = ', '.join(f'"{toml_escape(a)}"' for a in cfg['args'])
         mcp_toml += f'args = [{args_str}]\n'
+    if cfg.get('headers'):
+        header_str = ', '.join(
+            f'"{toml_escape(str(k))}" = "{toml_escape(str(v))}"'
+            for k, v in cfg['headers'].items()
+        )
+        mcp_toml += f'http_headers = {{ {header_str} }}\n'
     if cfg.get('env'):
         mcp_toml += f'\n[mcp_servers.{name}.env]\n'
         for k, v in cfg['env'].items():
@@ -99,7 +106,7 @@ with open(toml_path, 'w') as f:
 print("✓ ~/.codex/config.toml 업데이트 완료")
 
 # --- Cursor: ~/.cursor/mcp.json ---
-cursor_mcp_path = os.path.expanduser('~/.cursor/mcp.json')
+cursor_mcp_path = os.path.join('$TARGET_HOME', '.cursor', 'mcp.json')
 if os.path.exists(os.path.dirname(cursor_mcp_path)):
     if os.path.exists(cursor_mcp_path):
         with open(cursor_mcp_path) as f:

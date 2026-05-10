@@ -77,7 +77,46 @@ description: HN/GN + 글로벌/중국 공식 AI 소스를 수집해 Dooray DM으
 - 링크는 원문 URL 1개만 사용
 - 수집 포털/중간 링크를 추가로 붙이지 않음
 
-## Dooray 전송
+## 전달
+
+**항상** Discord와 Dooray 양쪽에 전달한다. 하나가 실패해도 나머지는 계속 진행한다.
+
+### 1) Discord #브리핑 채널 전송 (우선)
+
+`terminal` 도구로 아래 Python 스크립트를 실행해 Discord 채널 `1502682632230801528`에 직접 전송한다.
+뉴스 본문이 2000자를 초과하면 1900자씩 분할해 순서대로 전송한다.
+
+```python
+import urllib.request, json, os
+
+token = ''
+env_path = os.path.expanduser('~/.hermes/.env')
+with open(env_path) as f:
+    for line in f:
+        line = line.strip()
+        if line.startswith('DISCORD_BOT_TOKEN='):
+            token = line.split('=', 1)[1].strip().strip('"').strip("'")
+
+channel_id = '1502682632230801528'
+content = """여기에 뉴스 본문"""  # 실제 실행 시 뉴스 본문으로 대체
+
+chunks = [content[i:i+1900] for i in range(0, len(content), 1900)]
+for chunk in chunks:
+    data = json.dumps({'content': chunk}).encode('utf-8')
+    req = urllib.request.Request(
+        f'https://discord.com/api/v10/channels/{channel_id}/messages',
+        data=data,
+        headers={'Authorization': f'Bot {token}', 'Content-Type': 'application/json'},
+        method='POST'
+    )
+    try:
+        with urllib.request.urlopen(req, timeout=10) as resp:
+            print(f'Discord sent: {resp.status}')
+    except Exception as e:
+        print(f'Discord error: {e}')
+```
+
+### 2) Dooray DM 전송 (보조)
 
 1. `mcp__dooray__get-my-member-info`로 본인 ID 조회
 2. `mcp__dooray__send-messenger-direct-message`로 전송
