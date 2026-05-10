@@ -197,9 +197,17 @@ cat > "$HOME/bin/codex" <<'EOF'
 #!/usr/bin/env bash
 set -euo pipefail
 
-DOTFILES="${DOTFILES:-$HOME/dotfiles}"
-WRAPPER_PATH="$HOME/bin/codex"
-CODEX_SESSIONS_DIR="${CODEX_SESSIONS_DIR:-$HOME/.codex/sessions}"
+WRAPPER_PATH="$(cd "$(dirname "${BASH_SOURCE[0]}")" && pwd)/$(basename "${BASH_SOURCE[0]}")"
+WRAPPER_HOME="$(cd "$(dirname "$WRAPPER_PATH")/.." && pwd)"
+DEFAULT_DOTFILES="$WRAPPER_HOME/dotfiles"
+if [ ! -d "$DEFAULT_DOTFILES" ]; then
+  LOGIN_HOME="$(dscl . -read "/Users/$(id -un)" NFSHomeDirectory 2>/dev/null | awk '{print $2}' || true)"
+  if [ -n "${LOGIN_HOME:-}" ] && [ -d "$LOGIN_HOME/dotfiles" ]; then
+    DEFAULT_DOTFILES="$LOGIN_HOME/dotfiles"
+  fi
+fi
+DOTFILES="${DOTFILES:-$DEFAULT_DOTFILES}"
+CODEX_SESSIONS_DIR="${CODEX_SESSIONS_DIR:-$WRAPPER_HOME/.codex/sessions}"
 
 latest_session_file() {
   find "$CODEX_SESSIONS_DIR" -type f -name '*.jsonl' 2>/dev/null | while read -r path; do
