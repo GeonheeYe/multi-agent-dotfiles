@@ -4,3 +4,9 @@ claude_plugins/cache/
 claude_plugins/marketplaces/
 claude_plugins/install-counts-cache.json
 claude_plugins/blocklist.json
+
+credentials.json
+token_calendar.json
+mcp/secrets.json
+*.env
+.env*
