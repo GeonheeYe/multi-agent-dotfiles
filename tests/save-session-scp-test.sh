@@ -61,8 +61,12 @@ printf '{"session_id":"abc12345","transcript_path":"%s","source":"codex"}\n' "$t
 
 assert_file_contains "$remote_log" "geonhee-ubuntu" "remote host should default to geonhee-ubuntu"
 assert_file_contains "$remote_log" "-P 22" "scp should use Ubuntu SSH port 22 by default"
-assert_file_contains "$remote_log" "/home/geonhee/LONGMEMORY/raw/unprocessed/" "remote upload should target LONGMEMORY raw/unprocessed"
+assert_file_contains "$remote_log" "/home/geonhee/wiki/raw/unprocessed" "remote upload should target Hermes default wiki raw/unprocessed"
 assert_file_contains "$remote_log" "process_longmemory_raw.py" "remote processing should classify the uploaded raw session"
 assert_file_contains "$remote_log" "update_longmemory_wiki.py" "remote processing should refresh wiki metadata"
+
+
+# 기본 Hermes llm-wiki 경로는 ~/wiki이므로 원격 processor도 WIKI_PATH=/home/geonhee/wiki로 실행되어야 한다.
+grep -Fq "WIKI_PATH=/home/geonhee/wiki" "$remote_log" || fail "remote processor should run with WIKI_PATH=/home/geonhee/wiki"
 
 echo "PASS"

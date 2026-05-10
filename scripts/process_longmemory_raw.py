@@ -13,11 +13,24 @@ from pathlib import Path
 
 TERMUX_HOME = Path('/data/data/com.termux/files/home')
 DEFAULT_LONGMEMORY = TERMUX_HOME / 'LONGMEMORY' if TERMUX_HOME.exists() else Path.home() / 'LONGMEMORY'
-LONGMEMORY = Path(os.environ.get('LONGMEMORY_DIR', str(DEFAULT_LONGMEMORY))).expanduser()
-RAW_DIR = LONGMEMORY / 'raw'
-INBOX_DIR = LONGMEMORY / 'inbox'
-WIKI_DIR = LONGMEMORY / 'wiki' / 'projects'
-INDEX_FILE = LONGMEMORY / 'wiki' / 'index.md'
+
+def _resolve_wiki_root() -> Path:
+    # Hermes llm-wiki 기본값은 WIKI_PATH 또는 ~/wiki 이다.
+    # 기존 LONGMEMORY_DIR 기반 호출은 backward compatibility로 유지한다.
+    if os.environ.get('WIKI_PATH'):
+        return Path(os.environ['WIKI_PATH']).expanduser()
+    if os.environ.get('LONGMEMORY_WIKI_PATH'):
+        return Path(os.environ['LONGMEMORY_WIKI_PATH']).expanduser()
+    if os.environ.get('LONGMEMORY_DIR'):
+        return Path(os.environ['LONGMEMORY_DIR']).expanduser() / 'wiki'
+    return Path.home() / 'wiki'
+
+
+WIKI_ROOT = _resolve_wiki_root()
+RAW_DIR = WIKI_ROOT / 'raw'
+INBOX_DIR = WIKI_ROOT / 'inbox'
+WIKI_DIR = WIKI_ROOT / 'projects'
+INDEX_FILE = WIKI_ROOT / 'index.md'
 
 KNOWN_PROJECTS = {
     'aegis-ap': ['aegis-ap', 'aegis ap', 'wing기능', 'wing 기능'],
@@ -73,7 +86,7 @@ def ensure_project_files(slug: str):
 def update_index(slug: str):
     INDEX_FILE.parent.mkdir(parents=True, exist_ok=True)
     if not INDEX_FILE.exists():
-        INDEX_FILE.write_text('# LONGMEMORY Wiki Index\n\n## Projects\n', encoding='utf-8')
+        INDEX_FILE.write_text('# Wiki Index\n\n## Projects\n', encoding='utf-8')
     txt = INDEX_FILE.read_text(encoding='utf-8')
     line = f'- [{slug}](./projects/{slug}/overview.md)'
     if line not in txt:

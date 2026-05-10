@@ -10,13 +10,26 @@ from urllib import parse, request
 
 TERMUX_HOME = Path('/data/data/com.termux/files/home')
 DEFAULT_HOME = TERMUX_HOME if TERMUX_HOME.exists() else Path.home()
-LONGMEMORY = Path(os.environ.get('LONGMEMORY_DIR', str(DEFAULT_HOME / 'LONGMEMORY'))).expanduser()
-PROJECTS_DIR = LONGMEMORY / 'wiki' / 'projects'
-TOPICS_DIR = LONGMEMORY / 'wiki' / 'topics'
+
+def _resolve_wiki_root() -> Path:
+    # Hermes llm-wiki 기본값은 WIKI_PATH 또는 ~/wiki 이다.
+    # 기존 LONGMEMORY_DIR 기반 호출은 backward compatibility로 유지한다.
+    if os.environ.get('WIKI_PATH'):
+        return Path(os.environ['WIKI_PATH']).expanduser()
+    if os.environ.get('LONGMEMORY_WIKI_PATH'):
+        return Path(os.environ['LONGMEMORY_WIKI_PATH']).expanduser()
+    if os.environ.get('LONGMEMORY_DIR'):
+        return Path(os.environ['LONGMEMORY_DIR']).expanduser() / 'wiki'
+    return DEFAULT_HOME / 'wiki'
+
+
+WIKI_ROOT = _resolve_wiki_root()
+PROJECTS_DIR = WIKI_ROOT / 'projects'
+TOPICS_DIR = WIKI_ROOT / 'topics'
 OPENCLAW_CONFIG = Path(os.environ.get('OPENCLAW_CONFIG', str(DEFAULT_HOME / '.openclaw/openclaw.json'))).expanduser()
 DEFAULT_TELEGRAM_CHAT_ID = 'YOUR_TELEGRAM_CHAT_ID'
-INDEX_FILE = LONGMEMORY / 'wiki' / 'index.md'
-INBOX_DIR = LONGMEMORY / 'inbox'
+INDEX_FILE = WIKI_ROOT / 'index.md'
+INBOX_DIR = WIKI_ROOT / 'inbox'
 CLASSIFY_DONE_FILE = TOPICS_DIR / 'classification-commands.done.txt'
 CLASSIFY_REPORT_FILE = TOPICS_DIR / 'classification-report.md'
 PROCESSED_RAW_FILENAME = '.processed_raw.txt'
@@ -95,7 +108,7 @@ def ensure_project_files(project_slug: str, display_name: str | None = None) -> 
 def update_index(project_slug: str) -> None:
     INDEX_FILE.parent.mkdir(parents=True, exist_ok=True)
     if not INDEX_FILE.exists():
-        INDEX_FILE.write_text('# LONGMEMORY Wiki Index\n\n## Projects\n', encoding='utf-8')
+        INDEX_FILE.write_text('# Wiki Index\n\n## Projects\n', encoding='utf-8')
     line = f'- [{project_slug}](./projects/{project_slug}/overview.md)'
     txt = INDEX_FILE.read_text(encoding='utf-8', errors='replace')
     if line not in txt:

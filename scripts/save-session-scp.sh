@@ -177,12 +177,13 @@ fi
 REMOTE_ENABLED="${LONGMEMORY_REMOTE_ENABLED:-1}"
 REMOTE_HOST="${LONGMEMORY_REMOTE_HOST:-geonhee-ubuntu}"
 REMOTE_PORT="${LONGMEMORY_REMOTE_PORT:-22}"
-REMOTE_DIR="${LONGMEMORY_REMOTE_DIR:-/home/geonhee/LONGMEMORY}"
-REMOTE_RAW_DIR="${LONGMEMORY_REMOTE_RAW_DIR:-$REMOTE_DIR/raw/unprocessed}"
-REMOTE_BIN_DIR="${LONGMEMORY_REMOTE_BIN_DIR:-$REMOTE_DIR/bin}"
+REMOTE_WIKI_DIR="${LONGMEMORY_REMOTE_WIKI_DIR:-/home/geonhee/wiki}"
+REMOTE_DIR="$REMOTE_WIKI_DIR"
+REMOTE_RAW_DIR="${LONGMEMORY_REMOTE_RAW_DIR:-$REMOTE_WIKI_DIR/raw/unprocessed}"
+REMOTE_BIN_DIR="${LONGMEMORY_REMOTE_BIN_DIR:-/home/geonhee/.local/share/llm-wiki/bin}"
 REMOTE_PROCESS_SCRIPT="${LONGMEMORY_REMOTE_PROCESS_SCRIPT:-$REMOTE_BIN_DIR/process_longmemory_raw.py}"
 REMOTE_UPDATE_SCRIPT="${LONGMEMORY_REMOTE_UPDATE_SCRIPT:-$REMOTE_BIN_DIR/update_longmemory_wiki.py}"
-REMOTE_PROCESS_LOG="${LONGMEMORY_REMOTE_PROCESS_LOG:-$REMOTE_DIR/process.log}"
+REMOTE_PROCESS_LOG="${LONGMEMORY_REMOTE_PROCESS_LOG:-/home/geonhee/.local/state/llm-wiki/process.log}"
 SESSION_SHORT="${SESSION_ID:0:8}"
 
 if [ "$REMOTE_ENABLED" = "0" ]; then
@@ -201,7 +202,8 @@ _run_remote_transfer() {
 
     local remote_raw_q
     local remote_bin_q
-    local remote_dir_q
+    local remote_log_dir_q
+    local remote_wiki_q
     local remote_file
     local remote_file_q
     local process_script_q
@@ -209,7 +211,8 @@ _run_remote_transfer() {
     local process_log_q
     remote_raw_q="$(_shell_quote "$REMOTE_RAW_DIR")"
     remote_bin_q="$(_shell_quote "$REMOTE_BIN_DIR")"
-    remote_dir_q="$(_shell_quote "$REMOTE_DIR")"
+    remote_log_dir_q="$(_shell_quote "$(dirname "$REMOTE_PROCESS_LOG")")"
+    remote_wiki_q="$(_shell_quote "$REMOTE_WIKI_DIR")"
     remote_file="$REMOTE_RAW_DIR/$(basename "$OUTPUT_FILE")"
     remote_file_q="$(_shell_quote "$remote_file")"
     process_script_q="$(_shell_quote "$REMOTE_PROCESS_SCRIPT")"
@@ -217,7 +220,7 @@ _run_remote_transfer() {
     process_log_q="$(_shell_quote "$REMOTE_PROCESS_LOG")"
 
     ssh -p "$REMOTE_PORT" -o ConnectTimeout=5 -o BatchMode=yes -o StrictHostKeyChecking=no \
-        "$REMOTE_HOST" "mkdir -p $remote_raw_q $remote_bin_q"
+        "$REMOTE_HOST" "mkdir -p $remote_raw_q $remote_bin_q $remote_log_dir_q"
     mkdir_rc=$?
     if [ $mkdir_rc -ne 0 ]; then
         echo "[save-session:bg] ssh mkdir 실패 rc=$mkdir_rc"
@@ -246,7 +249,7 @@ _run_remote_transfer() {
             echo "[save-session:bg] SCP 전송 완료 (시도 ${attempt}, rc=0) → ${REMOTE_HOST}:${REMOTE_RAW_DIR}/"
             scp_success=1
             ssh -p "$REMOTE_PORT" -o ConnectTimeout=10 -o BatchMode=yes -o StrictHostKeyChecking=no \
-                "$REMOTE_HOST" "if [ -f $process_script_q ]; then LONGMEMORY_DIR=$remote_dir_q python3 $process_script_q $remote_file_q >> $process_log_q 2>&1; else echo '[save-session:bg] missing process script: $REMOTE_PROCESS_SCRIPT' >> $process_log_q; fi; if [ -f $update_script_q ]; then LONGMEMORY_DIR=$remote_dir_q python3 $update_script_q >> $process_log_q 2>&1; fi"
+                "$REMOTE_HOST" "if [ -f $process_script_q ]; then WIKI_PATH=$remote_wiki_q python3 $process_script_q $remote_file_q >> $process_log_q 2>&1; else echo '[save-session:bg] missing process script: $REMOTE_PROCESS_SCRIPT' >> $process_log_q; fi; if [ -f $update_script_q ]; then WIKI_PATH=$remote_wiki_q python3 $update_script_q >> $process_log_q 2>&1; fi"
             echo "[save-session:bg] LONGMEMORY 처리 스크립트 트리거됨"
             break
         fi
@@ -269,7 +272,7 @@ if [ "${SAVE_SESSION_SCP_SYNC:-0}" = "1" ]; then
     echo "[save-session] SCP 동기 실행 완료 (session=$SESSION_SHORT)" >&2
 else
     export LOG_FILE OUTPUT_FILE OUTPUT_BASE_DIR KEEP_LOCAL_RAW SAVE_SESSION_SCRIPT_DIR
-    export REMOTE_HOST REMOTE_PORT REMOTE_DIR REMOTE_RAW_DIR REMOTE_BIN_DIR
+    export REMOTE_HOST REMOTE_PORT REMOTE_WIKI_DIR REMOTE_DIR REMOTE_RAW_DIR REMOTE_BIN_DIR
     export REMOTE_PROCESS_SCRIPT REMOTE_UPDATE_SCRIPT REMOTE_PROCESS_LOG SESSION_SHORT
     nohup bash -c "$(declare -f _shell_quote _run_remote_transfer); _run_remote_transfer" </dev/null >/dev/null 2>&1 &
     disown 2>/dev/null || true
