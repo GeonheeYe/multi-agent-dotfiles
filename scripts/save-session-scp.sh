@@ -1,10 +1,21 @@
 #!/bin/bash
 # Session transcript(user/assistant text) -> local raw save + remote SCP
 
-SESSIONS_DIR="${SAVE_SESSION_DIR:-$HOME/claude-sessions}"
+TERMUX_HOME="/data/data/com.termux/files/home"
+if [ -n "${LONGMEMORY_DIR:-}" ]; then
+    LOCAL_LONGMEMORY_DIR="$LONGMEMORY_DIR"
+elif [ -d "$TERMUX_HOME" ]; then
+    LOCAL_LONGMEMORY_DIR="$TERMUX_HOME/LONGMEMORY"
+else
+    LOCAL_LONGMEMORY_DIR="$HOME/LONGMEMORY"
+fi
+
+SESSIONS_DIR="${SAVE_SESSION_DIR:-$LOCAL_LONGMEMORY_DIR/logs/session-hooks}"
 mkdir -p "$SESSIONS_DIR"
 LOG_FILE="$SESSIONS_DIR/save-session.log"
 SAVE_SESSION_SCRIPT_DIR="$(cd "$(dirname "${BASH_SOURCE[0]}")" && pwd)"
+LONGMEMORY_BUILTIN_SKILL_DIR="${LONGMEMORY_BUILTIN_SKILL_DIR:-/home/geonhee/dev/hermes-agent/skills/research/llm-wiki}"
+LONGMEMORY_BUILTIN_SCRIPT_DIR="${LONGMEMORY_BUILTIN_SCRIPT_DIR:-$LONGMEMORY_BUILTIN_SKILL_DIR/scripts}"
 exec 2>>"$LOG_FILE"
 
 INPUT=$(cat)
@@ -19,16 +30,7 @@ echo "[save-session] transcript_path: $TRANSCRIPT_PATH" >&2
 TIMESTAMP=$(date +"%Y-%m-%d_%H-%M-%S")
 SESSION_SHORT="${SESSION_ID:0:8}"
 
-TERMUX_HOME="/data/data/com.termux/files/home"
-if [ -n "${LONGMEMORY_DIR:-}" ]; then
-    LOCAL_LONGMEMORY_DIR="$LONGMEMORY_DIR"
-elif [ -d "$TERMUX_HOME" ]; then
-    LOCAL_LONGMEMORY_DIR="$TERMUX_HOME/LONGMEMORY"
-else
-    LOCAL_LONGMEMORY_DIR="$HOME/LONGMEMORY"
-fi
-
-if [ -d "/data/data/com.termux/files/home" ]; then
+if [ "${LONGMEMORY_LOCAL_PROCESS:-0}" = "1" ] || [ -d "/data/data/com.termux/files/home" ]; then
     OUTPUT_BASE_DIR="$LOCAL_LONGMEMORY_DIR/raw/unprocessed"
     KEEP_LOCAL_RAW=1
     mkdir -p "$OUTPUT_BASE_DIR"
@@ -147,6 +149,31 @@ fi
 
 echo "[save-session] raw 저장: $OUTPUT_FILE" >&2
 
+if [ "${LONGMEMORY_LOCAL_PROCESS:-0}" = "1" ]; then
+    LOCAL_PROCESS_SCRIPT="${LONGMEMORY_LOCAL_PROCESS_SCRIPT:-$LONGMEMORY_BUILTIN_SCRIPT_DIR/process_longmemory_raw.py}"
+    LOCAL_UPDATE_SCRIPT="${LONGMEMORY_LOCAL_UPDATE_SCRIPT:-$LONGMEMORY_BUILTIN_SCRIPT_DIR/update_longmemory_wiki.py}"
+    if [ ! -f "$LOCAL_PROCESS_SCRIPT" ]; then
+        LOCAL_PROCESS_SCRIPT="$SAVE_SESSION_SCRIPT_DIR/process_longmemory_raw.py"
+    fi
+    if [ ! -f "$LOCAL_UPDATE_SCRIPT" ]; then
+        LOCAL_UPDATE_SCRIPT="$SAVE_SESSION_SCRIPT_DIR/update_longmemory_wiki.py"
+    fi
+    LOCAL_PROCESS_LOG="${LONGMEMORY_LOCAL_PROCESS_LOG:-$LOCAL_LONGMEMORY_DIR/process.log}"
+    mkdir -p "$(dirname "$LOCAL_PROCESS_LOG")"
+    if [ -f "$LOCAL_PROCESS_SCRIPT" ]; then
+        LONGMEMORY_DIR="$LOCAL_LONGMEMORY_DIR" python3 "$LOCAL_PROCESS_SCRIPT" "$OUTPUT_FILE" >>"$LOCAL_PROCESS_LOG" 2>&1 || true
+        echo "[save-session] local LONGMEMORY process 완료" >&2
+    else
+        echo "[save-session] local process script 없음: $LOCAL_PROCESS_SCRIPT" >&2
+    fi
+    if [ -f "$LOCAL_UPDATE_SCRIPT" ]; then
+        LONGMEMORY_DIR="$LOCAL_LONGMEMORY_DIR" python3 "$LOCAL_UPDATE_SCRIPT" >>"$LOCAL_PROCESS_LOG" 2>&1 || true
+        echo "[save-session] local LONGMEMORY wiki update 완료" >&2
+    else
+        echo "[save-session] local update script 없음: $LOCAL_UPDATE_SCRIPT" >&2
+    fi
+fi
+
 REMOTE_ENABLED="${LONGMEMORY_REMOTE_ENABLED:-1}"
 REMOTE_HOST="${LONGMEMORY_REMOTE_HOST:-geonhee-ubuntu}"
 REMOTE_PORT="${LONGMEMORY_REMOTE_PORT:-22}"
@@ -196,10 +223,11 @@ _run_remote_transfer() {
         echo "[save-session:bg] ssh mkdir 실패 rc=$mkdir_rc"
     fi
 
-    # Keep the canonical LONGMEMORY processor on the remote host in sync with this dotfiles checkout.
-    # This makes sessions sent from any device use the same classifier/wiki updater/loader behavior.
+    # Keep the canonical LONGMEMORY processor on the remote host in sync with the built-in Hermes llm-wiki copy.
+    # Fallback to this dotfiles checkout only if the built-in script is absent.
     local script_dir
-    script_dir="$SAVE_SESSION_SCRIPT_DIR"
+    script_dir="$LONGMEMORY_BUILTIN_SCRIPT_DIR"
+    [ -d "$script_dir" ] || script_dir="$SAVE_SESSION_SCRIPT_DIR"
     for local_script in process_longmemory_raw.py update_longmemory_wiki.py longmemory_loader.py; do
         if [ -f "$script_dir/$local_script" ]; then
             scp -P "$REMOTE_PORT" -o ConnectTimeout=15 -o BatchMode=yes -o StrictHostKeyChecking=no \
