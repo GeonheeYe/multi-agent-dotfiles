@@ -62,11 +62,21 @@ printf '{"session_id":"abc12345","transcript_path":"%s","source":"codex"}\n' "$t
 assert_file_contains "$remote_log" "geonhee-ubuntu" "remote host should default to geonhee-ubuntu"
 assert_file_contains "$remote_log" "-P 22" "scp should use Ubuntu SSH port 22 by default"
 assert_file_contains "$remote_log" "/home/geonhee/wiki/raw/unprocessed" "remote upload should target Hermes default wiki raw/unprocessed"
-assert_file_contains "$remote_log" "process_longmemory_raw.py" "remote processing should classify the uploaded raw session"
-assert_file_contains "$remote_log" "update_longmemory_wiki.py" "remote processing should refresh wiki metadata"
+if grep -Fq "process_longmemory_raw.py" "$remote_log"; then
+  fail "remote processing should be disabled by default; Hermes handles raw/unprocessed classification"
+fi
+if grep -Fq "update_longmemory_wiki.py" "$remote_log"; then
+  fail "remote wiki update should be disabled by default; Hermes handles raw/unprocessed classification"
+fi
 
+: >"$remote_log"
+printf '{"session_id":"abc12345","transcript_path":"%s","source":"codex"}\n' "$transcript" \
+  | HOME="$temp_home" SAVE_SESSION_DIR="$temp_home/codex-sessions" SAVE_SESSION_SCP_SYNC=1 LONGMEMORY_REMOTE_PROCESS_ENABLED=1 FAKE_REMOTE_LOG="$remote_log" PATH="$fakebin:$PATH" bash "$SCRIPT" >/dev/null 2>&1
 
-# 기본 Hermes llm-wiki 경로는 ~/wiki이므로 원격 processor도 WIKI_PATH=/home/geonhee/wiki로 실행되어야 한다.
-grep -Fq "WIKI_PATH=/home/geonhee/wiki" "$remote_log" || fail "remote processor should run with WIKI_PATH=/home/geonhee/wiki"
+assert_file_contains "$remote_log" "process_longmemory_raw.py" "opt-in remote processing should classify the uploaded raw session"
+assert_file_contains "$remote_log" "update_longmemory_wiki.py" "opt-in remote processing should refresh wiki metadata"
+
+# 기본 Hermes llm-wiki 경로는 ~/wiki이므로 opt-in 원격 processor도 WIKI_PATH=/home/geonhee/wiki로 실행되어야 한다.
+grep -Fq "WIKI_PATH=/home/geonhee/wiki" "$remote_log" || fail "opt-in remote processor should run with WIKI_PATH=/home/geonhee/wiki"
 
 echo "PASS"

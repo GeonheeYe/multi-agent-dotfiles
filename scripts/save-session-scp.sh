@@ -184,6 +184,9 @@ REMOTE_BIN_DIR="${LONGMEMORY_REMOTE_BIN_DIR:-/home/geonhee/.local/share/llm-wiki
 REMOTE_PROCESS_SCRIPT="${LONGMEMORY_REMOTE_PROCESS_SCRIPT:-$REMOTE_BIN_DIR/process_longmemory_raw.py}"
 REMOTE_UPDATE_SCRIPT="${LONGMEMORY_REMOTE_UPDATE_SCRIPT:-$REMOTE_BIN_DIR/update_longmemory_wiki.py}"
 REMOTE_PROCESS_LOG="${LONGMEMORY_REMOTE_PROCESS_LOG:-/home/geonhee/.local/state/llm-wiki/process.log}"
+# 기본값은 전송만 수행한다. 분류/위키 반영은 Hermes가 raw/unprocessed를 감시하며 처리한다.
+# 이전 동작이 필요하면 LONGMEMORY_REMOTE_PROCESS_ENABLED=1 로 명시한다.
+REMOTE_PROCESS_ENABLED="${LONGMEMORY_REMOTE_PROCESS_ENABLED:-0}"
 SESSION_SHORT="${SESSION_ID:0:8}"
 
 if [ "$REMOTE_ENABLED" = "0" ]; then
@@ -226,19 +229,23 @@ _run_remote_transfer() {
         echo "[save-session:bg] ssh mkdir 실패 rc=$mkdir_rc"
     fi
 
-    # Keep the canonical LONGMEMORY processor on the remote host in sync with the built-in Hermes llm-wiki copy.
-    # Fallback to this dotfiles checkout only if the built-in script is absent.
-    local script_dir
-    script_dir="$LONGMEMORY_BUILTIN_SCRIPT_DIR"
-    [ -d "$script_dir" ] || script_dir="$SAVE_SESSION_SCRIPT_DIR"
-    for local_script in process_longmemory_raw.py update_longmemory_wiki.py longmemory_loader.py; do
-        if [ -f "$script_dir/$local_script" ]; then
-            scp -P "$REMOTE_PORT" -o ConnectTimeout=15 -o BatchMode=yes -o StrictHostKeyChecking=no \
-                "$script_dir/$local_script" "${REMOTE_HOST}:${REMOTE_BIN_DIR}/" \
-                && echo "[save-session:bg] remote script synced: $local_script" \
-                || echo "[save-session:bg] remote script sync failed: $local_script"
-        fi
-    done
+    if [ "$REMOTE_PROCESS_ENABLED" = "1" ]; then
+        # Keep the canonical LONGMEMORY processor on the remote host in sync with the built-in Hermes llm-wiki copy.
+        # Fallback to this dotfiles checkout only if the built-in script is absent.
+        local script_dir
+        script_dir="$LONGMEMORY_BUILTIN_SCRIPT_DIR"
+        [ -d "$script_dir" ] || script_dir="$SAVE_SESSION_SCRIPT_DIR"
+        for local_script in process_longmemory_raw.py update_longmemory_wiki.py longmemory_loader.py; do
+            if [ -f "$script_dir/$local_script" ]; then
+                scp -P "$REMOTE_PORT" -o ConnectTimeout=15 -o BatchMode=yes -o StrictHostKeyChecking=no \
+                    "$script_dir/$local_script" "${REMOTE_HOST}:${REMOTE_BIN_DIR}/" \
+                    && echo "[save-session:bg] remote script synced: $local_script" \
+                    || echo "[save-session:bg] remote script sync failed: $local_script"
+            fi
+        done
+    else
+        echo "[save-session:bg] remote LONGMEMORY processing disabled; upload only"
+    fi
 
     scp_success=0
     for attempt in 1 2 3; do
@@ -248,9 +255,13 @@ _run_remote_transfer() {
         if [ $rc -eq 0 ]; then
             echo "[save-session:bg] SCP 전송 완료 (시도 ${attempt}, rc=0) → ${REMOTE_HOST}:${REMOTE_RAW_DIR}/"
             scp_success=1
-            ssh -p "$REMOTE_PORT" -o ConnectTimeout=10 -o BatchMode=yes -o StrictHostKeyChecking=no \
-                "$REMOTE_HOST" "if [ -f $process_script_q ]; then WIKI_PATH=$remote_wiki_q python3 $process_script_q $remote_file_q >> $process_log_q 2>&1; else echo '[save-session:bg] missing process script: $REMOTE_PROCESS_SCRIPT' >> $process_log_q; fi; if [ -f $update_script_q ]; then WIKI_PATH=$remote_wiki_q python3 $update_script_q >> $process_log_q 2>&1; fi"
-            echo "[save-session:bg] LONGMEMORY 처리 스크립트 트리거됨"
+            if [ "$REMOTE_PROCESS_ENABLED" = "1" ]; then
+                ssh -p "$REMOTE_PORT" -o ConnectTimeout=10 -o BatchMode=yes -o StrictHostKeyChecking=no \
+                    "$REMOTE_HOST" "if [ -f $process_script_q ]; then WIKI_PATH=$remote_wiki_q python3 $process_script_q $remote_file_q >> $process_log_q 2>&1; else echo '[save-session:bg] missing process script: $REMOTE_PROCESS_SCRIPT' >> $process_log_q; fi; if [ -f $update_script_q ]; then WIKI_PATH=$remote_wiki_q python3 $update_script_q >> $process_log_q 2>&1; fi"
+                echo "[save-session:bg] LONGMEMORY 처리 스크립트 트리거됨"
+            else
+                echo "[save-session:bg] LONGMEMORY 처리 스크립트 미실행; Hermes classifier 대기"
+            fi
             break
         fi
         echo "[save-session:bg] SCP 실패 (시도 ${attempt}, rc=${rc})"
@@ -273,7 +284,7 @@ if [ "${SAVE_SESSION_SCP_SYNC:-0}" = "1" ]; then
 else
     export LOG_FILE OUTPUT_FILE OUTPUT_BASE_DIR KEEP_LOCAL_RAW SAVE_SESSION_SCRIPT_DIR
     export REMOTE_HOST REMOTE_PORT REMOTE_WIKI_DIR REMOTE_DIR REMOTE_RAW_DIR REMOTE_BIN_DIR
-    export REMOTE_PROCESS_SCRIPT REMOTE_UPDATE_SCRIPT REMOTE_PROCESS_LOG SESSION_SHORT
+    export REMOTE_PROCESS_SCRIPT REMOTE_UPDATE_SCRIPT REMOTE_PROCESS_LOG REMOTE_PROCESS_ENABLED SESSION_SHORT
     nohup bash -c "$(declare -f _shell_quote _run_remote_transfer); _run_remote_transfer" </dev/null >/dev/null 2>&1 &
     disown 2>/dev/null || true
     echo "[save-session] SCP 백그라운드 분리 (session=$SESSION_SHORT), 훅 즉시 종료" >&2
