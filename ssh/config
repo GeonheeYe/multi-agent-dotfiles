@@ -14,5 +14,7 @@ Host geonhee-ubuntu
     HostName 100.71.103.11
     Port 22
     User geonhee
+    IdentityFile ~/.ssh/id_ed25519_s20
+    IdentitiesOnly yes
     ServerAliveInterval 30
     ServerAliveCountMax 3
