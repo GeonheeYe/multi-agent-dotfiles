@@ -210,42 +210,30 @@ DOTFILES="${DOTFILES:-$DEFAULT_DOTFILES}"
 CODEX_SESSIONS_DIR="${CODEX_SESSIONS_DIR:-$WRAPPER_HOME/.codex/sessions}"
 
 latest_session_file() {
-  python3 - "$CODEX_SESSIONS_DIR" <<'PYEOF'
-import os
-import sys
-
+  python3 -c 'import os, sys
 root = sys.argv[1]
-latest_path = ""
-latest_mtime = -1
-
+latest = None
 for dirpath, _, filenames in os.walk(root):
     for filename in filenames:
         if not filename.endswith(".jsonl"):
             continue
         path = os.path.join(dirpath, filename)
         try:
-            mtime = os.path.getmtime(path)
+            item = (os.path.getmtime(path), path)
         except OSError:
             continue
-        if mtime > latest_mtime:
-            latest_mtime = mtime
-            latest_path = path
-
-if latest_path:
-    print(latest_path)
-PYEOF
+        if latest is None or item[0] > latest[0]:
+            latest = item
+if latest:
+    print(latest[1])' "$CODEX_SESSIONS_DIR"
 }
 
 file_mtime() {
-  python3 - "$1" <<'PYEOF'
-import os
-import sys
-
+  python3 -c 'import os, sys
 try:
     print(int(os.path.getmtime(sys.argv[1])))
 except OSError:
-    print(0)
-PYEOF
+    print(0)' "$1"
 }
 
 before_file="$(latest_session_file)"
