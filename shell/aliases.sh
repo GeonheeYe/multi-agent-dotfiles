@@ -222,7 +222,12 @@ cdd-work() {
 }
 
 cdd-personal() {
-  _run_codex_with_home "$CODEX_PERSONAL_HOME" --dangerously-bypass-approvals-and-sandbox "$@"
+  if [ "${1:-}" = "update" ]; then
+    shift
+    _run_codex_with_home "$CODEX_PERSONAL_HOME" update "$@"
+  else
+    _run_codex_with_home "$CODEX_PERSONAL_HOME" --dangerously-bypass-approvals-and-sandbox "$@"
+  fi
   local exit_code=$?
   _dotfiles_push
   return "$exit_code"

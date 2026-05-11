@@ -62,6 +62,14 @@ assert_contains "$personal_output" "real:$temp_home/.codex-personal-home args:--
 [ -L "$temp_home/.codex-personal-home/.codex/config.toml" ] || fail "cdd-personal should link shared config"
 [ -L "$temp_home/.codex-personal-home/.codex/plugins/cache" ] || fail "cdd-personal should link shared plugin cache"
 
+personal_update_output="$(
+  HOME="$temp_home" DOTFILES="$temp_home/dotfiles" REAL_CODEX_BIN="$temp_home/bin/codex-real" /bin/bash -lc '
+    source "'"$ALIASES"'"
+    cdd-personal update
+  '
+)"
+assert_contains "$personal_update_output" "real:$temp_home/.codex-personal-home args:update" "cdd-personal update should run codex update with personal HOME"
+
 login_output="$(
   HOME="$temp_home" DOTFILES="$temp_home/dotfiles" REAL_CODEX_BIN="$temp_home/bin/codex-real" /bin/bash -lc '
     source "'"$ALIASES"'"
