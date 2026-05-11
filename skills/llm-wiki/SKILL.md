@@ -12,21 +12,22 @@ LONGMEMORY is the first-class backend for project/session context. Use this befo
 Prefer the bundled loader; do not depend on a shell alias.
 
 ```bash
-python ~/dotfiles/scripts/longmemory_loader.py list
-python ~/dotfiles/scripts/longmemory_loader.py load aegis
-python ~/dotfiles/scripts/longmemory_loader.py load 사주 --recent-sessions 3
+DOTFILES="${DOTFILES:-$(getent passwd "$(id -un)" | cut -d: -f6)/dotfiles}"
+python3 "$DOTFILES/scripts/longmemory_loader.py" list
+python3 "$DOTFILES/scripts/longmemory_loader.py" load aegis
+python3 "$DOTFILES/scripts/longmemory_loader.py" load 사주 --recent-sessions 3
 ```
 
-If `~/dotfiles` is unavailable, search for `longmemory_loader.py`; if running inside Hermes repo, use `skills/research/llm-wiki/scripts/longmemory_loader.py`.
+If `$DOTFILES` is unavailable, search for `longmemory_loader.py`; if running inside Hermes repo, use `skills/research/llm-wiki/scripts/longmemory_loader.py`.
 
 Path resolution order:
 1. `$LONGMEMORY_WIKI_PATH`
 2. `$LONGMEMORY_DIR/wiki`
 3. `$LONGMEMORY_PATH/wiki`
-4. `~/LONGMEMORY/wiki`
+4. `~/LONGMEMORY/wiki`, `$REAL_HOME/LONGMEMORY/wiki`, and the passwd database home `LONGMEMORY/wiki`
 5. `$WIKI_PATH`
-6. `~/wiki`
-7. SSH fallback only when `LONGMEMORY_REMOTE_HOST` or `LONGMEMORY_SSH_HOST` is set, using `LONGMEMORY_REMOTE_DIR` or `/home/geonhee/LONGMEMORY`.
+6. `~/wiki`, `$REAL_HOME/wiki`, and the passwd database home `wiki`
+7. SSH fallback to `LONGMEMORY_REMOTE_HOST`, `LONGMEMORY_SSH_HOST`, or default `geonhee-ubuntu`, using `LONGMEMORY_REMOTE_DIR` or `/home/geonhee/LONGMEMORY`. Set `LONGMEMORY_REMOTE_ENABLED=0` to disable remote fallback.
 
 ## LONGMEMORY Layout
 

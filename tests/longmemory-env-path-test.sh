@@ -67,4 +67,43 @@ env -u WIKI_PATH -u LONGMEMORY_WIKI_PATH HOME="$temp_home" LONGMEMORY_DIR="$long
 grep -Fq "aegis-ap Context" "$wiki_output" || fail "wiki should read local LONGMEMORY when remote dir is the local LONGMEMORY"
 [ ! -s "$ssh_log" ] || fail "wiki should not SSH when LONGMEMORY_REMOTE_DIR is the local LONGMEMORY"
 
+real_home="$temp_home/real-home"
+personal_home="$temp_home/personal-home"
+mkdir -p "$real_home/LONGMEMORY/wiki/projects/real-project" "$personal_home"
+cat >"$real_home/LONGMEMORY/wiki/index.md" <<'EOF'
+- [real-project](./projects/real-project/overview.md)
+EOF
+cat >"$real_home/LONGMEMORY/wiki/projects/real-project/overview.md" <<'EOF'
+# Real Project Context
+EOF
+
+direct_loader_output="$temp_home/direct-loader-output.json"
+env -u WIKI_PATH -u LONGMEMORY_WIKI_PATH -u LONGMEMORY_DIR -u LONGMEMORY_PATH HOME="$personal_home" REAL_HOME="$real_home" \
+  python3 "$ROOT/scripts/longmemory_loader.py" load real-project >"$direct_loader_output"
+
+grep -Fq "$real_home/LONGMEMORY/wiki" "$direct_loader_output" \
+  || fail "loader should read REAL_HOME LONGMEMORY when HOME is a personal sandbox"
+grep -Fq "Real Project Context" "$direct_loader_output" \
+  || fail "loader should load project files from REAL_HOME LONGMEMORY"
+
+remote_ssh_log="$temp_home/remote-ssh.log"
+cat >"$fakebin/ssh" <<'EOF'
+#!/usr/bin/env bash
+printf 'ssh %s\n' "$*" >>"$FAKE_SSH_LOG"
+printf '{"ok": true, "source": "local", "wiki": "/home/geonhee/LONGMEMORY/wiki", "projects": ["aegis-ap"], "topics": []}\n'
+EOF
+chmod +x "$fakebin/ssh"
+
+remote_loader_output="$temp_home/remote-loader-output.json"
+env -u WIKI_PATH -u LONGMEMORY_WIKI_PATH -u LONGMEMORY_DIR -u LONGMEMORY_PATH -u LONGMEMORY_REMOTE_HOST -u LONGMEMORY_SSH_HOST \
+  HOME="$personal_home" REAL_HOME="$temp_home/missing-real-home" FAKE_SSH_LOG="$remote_ssh_log" PATH="$fakebin:$PATH" \
+  python3 "$ROOT/scripts/longmemory_loader.py" list >"$remote_loader_output"
+
+grep -Fq "geonhee-ubuntu" "$remote_ssh_log" \
+  || fail "loader should default remote fallback to geonhee-ubuntu"
+grep -Fq "LONGMEMORY_WIKI_PATH='/home/geonhee/LONGMEMORY/wiki'" "$remote_ssh_log" \
+  || fail "loader should read canonical geonhee-ubuntu LONGMEMORY wiki by default"
+grep -Fq '"remote_host": "geonhee-ubuntu"' "$remote_loader_output" \
+  || fail "loader output should identify the default remote host"
+
 echo "PASS"

@@ -12,6 +12,7 @@ from __future__ import annotations
 import argparse
 import json
 import os
+import pwd
 import subprocess
 import sys
 from pathlib import Path
@@ -58,11 +59,25 @@ def _candidate_wikis() -> list[Path]:
         val = os.environ.get(key)
         if val:
             out.append(Path(val).expanduser() / "wiki")
-    out.append(Path.home() / "LONGMEMORY" / "wiki")
+
+    home_candidates = [Path.home()]
+    real_home = os.environ.get("REAL_HOME")
+    if real_home:
+        home_candidates.append(Path(real_home).expanduser())
+    try:
+        passwd_home = pwd.getpwuid(os.getuid()).pw_dir
+    except Exception:
+        passwd_home = ""
+    if passwd_home:
+        home_candidates.append(Path(passwd_home).expanduser())
+
+    for home in home_candidates:
+        out.append(home / "LONGMEMORY" / "wiki")
     wiki_path = os.environ.get("WIKI_PATH")
     if wiki_path:
         out.append(Path(wiki_path).expanduser())
-    out.append(Path.home() / "wiki")
+    for home in home_candidates:
+        out.append(home / "wiki")
 
     seen: set[str] = set()
     uniq: list[Path] = []
@@ -168,7 +183,9 @@ def load_local(wiki: Path, keyword: str, recent_sessions: int = 2, max_chars_per
 
 
 def remote_host() -> str | None:
-    return os.environ.get("LONGMEMORY_REMOTE_HOST") or os.environ.get("LONGMEMORY_SSH_HOST")
+    if os.environ.get("LONGMEMORY_REMOTE_ENABLED") == "0":
+        return None
+    return os.environ.get("LONGMEMORY_REMOTE_HOST") or os.environ.get("LONGMEMORY_SSH_HOST") or "geonhee-ubuntu"
 
 
 def remote_dir() -> str:
