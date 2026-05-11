@@ -4,6 +4,8 @@ claude_plugins/cache/
 claude_plugins/marketplaces/
 claude_plugins/install-counts-cache.json
 claude_plugins/blocklist.json
+claude_plugins/installed_plugins.json
+claude_plugins/known_marketplaces.json
 
 credentials.json
 token_calendar.json
