@@ -41,6 +41,21 @@ ensure_line_in_file() {
   fi
 }
 
+ensure_block_in_file() {
+  local file_path="$1"
+  local begin_marker="$2"
+  local end_marker="$3"
+  local block="$4"
+
+  touch "$file_path"
+  if ! grep -qF "$begin_marker" "$file_path"; then
+    printf '\n%s\n%s\n%s\n' "$begin_marker" "$block" "$end_marker" >> "$file_path"
+    echo "✓ $file_path에 PATH 중복 제거 설정 추가"
+  else
+    echo "✓ $file_path PATH 중복 제거 설정 이미 존재"
+  fi
+}
+
 copy_skill_dir() {
   local source_dir="$1"
   local skill_name="$2"
@@ -143,7 +158,30 @@ fi
 
 # --- shell aliases (dotfiles pull 자동화) ---
 SOURCE_LINE="source \"$DOTFILES/shell/aliases.sh\""
-PATH_LINE='export PATH="$HOME/bin:$PATH"'
+PATH_LINE='export PATH="$HOME/bin:$HOME/.local/bin:$HOME/.npm-global/bin:$PATH"'
+PATH_DEDUPE_BEGIN="# dotfiles PATH dedupe begin"
+PATH_DEDUPE_END="# dotfiles PATH dedupe end"
+PATH_DEDUPE_BLOCK='dedupe_path() {
+  _old_path=$PATH
+  PATH=
+  while [ -n "$_old_path" ]; do
+    _path_entry=${_old_path%%:*}
+    if [ "$_old_path" = "$_path_entry" ]; then
+      _old_path=
+    else
+      _old_path=${_old_path#*:}
+    fi
+    [ -n "$_path_entry" ] || continue
+    case ":$PATH:" in
+      *:"$_path_entry":*) ;;
+      *) PATH="${PATH:+$PATH:}$_path_entry" ;;
+    esac
+  done
+  export PATH
+  unset _old_path _path_entry
+}
+dedupe_path
+unset -f dedupe_path 2>/dev/null || true'
 # 현재 쉘 기준으로 rc 파일 결정, 없으면 bash 기본값
 if [ -n "$ZSH_VERSION" ] || [ "$(basename "$SHELL")" = "zsh" ]; then
   SHELL_RC="$HOME/.zshrc"
@@ -162,6 +200,9 @@ fi
 ensure_line_in_file "$SHELL_RC" "$PATH_LINE"
 ensure_line_in_file "$HOME/.bashrc" "$PATH_LINE"
 ensure_line_in_file "$HOME/.profile" "$PATH_LINE"
+ensure_block_in_file "$SHELL_RC" "$PATH_DEDUPE_BEGIN" "$PATH_DEDUPE_END" "$PATH_DEDUPE_BLOCK"
+ensure_block_in_file "$HOME/.bashrc" "$PATH_DEDUPE_BEGIN" "$PATH_DEDUPE_END" "$PATH_DEDUPE_BLOCK"
+ensure_block_in_file "$HOME/.profile" "$PATH_DEDUPE_BEGIN" "$PATH_DEDUPE_END" "$PATH_DEDUPE_BLOCK"
 
 # --- ~/bin wrappers (push/save automation) ---
 mkdir -p "$HOME/bin"

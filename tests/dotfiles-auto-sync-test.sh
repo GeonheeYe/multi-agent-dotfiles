@@ -36,6 +36,20 @@ assert_not_contains() {
   fi
 }
 
+path_entry_count() {
+  local path_value="$1"
+  local needle="$2"
+  local count=0
+  local entry
+  IFS=: read -r -a entries <<<"$path_value"
+  for entry in "${entries[@]}"; do
+    if [ "$entry" = "$needle" ]; then
+      count=$((count + 1))
+    fi
+  done
+  printf '%s\n' "$count"
+}
+
 run_sync_case() {
   local status_output="$1"
   local pull_output="${2-}"
@@ -86,6 +100,7 @@ temp_home="$(mktemp -d)"
 trap 'rm -rf "$temp_home"' EXIT
 mkdir -p "$temp_home/.codex" "$temp_home/bin"
 HOME="$temp_home" DOTFILES_SKIP_LAUNCHD=1 bash "$ROOT/setup.sh" >/dev/null 2>&1 || true
+HOME="$temp_home" DOTFILES_SKIP_LAUNCHD=1 bash "$ROOT/setup.sh" >/dev/null 2>&1 || true
 
 [ -f "$temp_home/bin/claude" ] || fail "setup should install ~/bin/claude wrapper"
 [ -f "$temp_home/bin/codex" ] || fail "setup should install ~/bin/codex wrapper"
@@ -121,9 +136,14 @@ assert_contains "$cdd_personal_login_wrapper" 'source "$DOTFILES/shell/aliases.s
 assert_contains "$cdd_personal_login_wrapper" 'cdd-personal-login "$@"' "cdd-personal-login wrapper should delegate to cdd-personal-login function"
 
 profile_contents="$(cat "$temp_home/.profile")"
-assert_contains "$profile_contents" 'export PATH="$HOME/bin:$PATH"' "~/.profile should prepend ~/bin to PATH"
+assert_contains "$profile_contents" 'export PATH="$HOME/bin:$HOME/.local/bin:$HOME/.npm-global/bin:$PATH"' "~/.profile should prepend local tool paths to PATH"
 
 bashrc_contents="$(cat "$temp_home/.bashrc")"
-assert_contains "$bashrc_contents" 'export PATH="$HOME/bin:$PATH"' "~/.bashrc should prepend ~/bin to PATH"
+assert_contains "$bashrc_contents" 'export PATH="$HOME/bin:$HOME/.local/bin:$HOME/.npm-global/bin:$PATH"' "~/.bashrc should prepend local tool paths to PATH"
+
+login_path="$(HOME="$temp_home" bash -lc 'source "$HOME/.profile"; source "$HOME/.bashrc"; printf "%s\n" "$PATH"')"
+assert_eq "$(path_entry_count "$login_path" "$temp_home/bin")" "1" "setup should dedupe ~/bin in login PATH"
+assert_eq "$(path_entry_count "$login_path" "$temp_home/.local/bin")" "1" "setup should dedupe ~/.local/bin in login PATH"
+assert_eq "$(path_entry_count "$login_path" "$temp_home/.npm-global/bin")" "1" "setup should dedupe ~/.npm-global/bin in login PATH"
 
 echo "PASS"
