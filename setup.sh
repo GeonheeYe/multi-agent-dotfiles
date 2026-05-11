@@ -242,18 +242,7 @@ if [ -n "${before_file:-}" ] && [ -f "$before_file" ]; then
   before_mtime="$(file_mtime "$before_file")"
 fi
 
-real_bin=""
-if command -v npm >/dev/null 2>&1; then
-  npm_prefix="$(npm prefix -g 2>/dev/null || true)"
-  npm_codex="${npm_prefix}/bin/codex"
-  if [ -n "$npm_prefix" ] && [ -x "$npm_codex" ] && [ "$npm_codex" != "$WRAPPER_PATH" ]; then
-    real_bin="$npm_codex"
-  fi
-fi
-
-if [ -z "$real_bin" ]; then
-  real_bin="$(type -aP "codex" | grep -vx "$WRAPPER_PATH" | head -n 1 || true)"
-fi
+real_bin="$(type -aP "codex" | grep -vx "$WRAPPER_PATH" | head -n 1 || true)"
 if [ -z "$real_bin" ]; then
   printf 'codex command not found\n' >&2
   exit 127
