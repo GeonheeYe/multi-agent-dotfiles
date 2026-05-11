@@ -5,7 +5,7 @@
       "repo": "anthropics/claude-plugins-official"
     },
     "installLocation": "/Users/geonhee/.claude/plugins/marketplaces/claude-plugins-official",
-    "lastUpdated": "2026-05-11T00:29:33.170Z"
+    "lastUpdated": "2026-05-11T00:32:09.873Z"
   },
   "team-attention-plugins": {
     "source": {
@@ -13,7 +13,7 @@
       "repo": "team-attention/plugins-for-claude-natives"
     },
     "installLocation": "/Users/geonhee/.claude/plugins/marketplaces/team-attention-plugins",
-    "lastUpdated": "2026-05-11T00:29:36.143Z"
+    "lastUpdated": "2026-05-11T00:32:12.706Z"
   },
   "git-for-everyone": {
     "source": {
@@ -21,7 +21,7 @@
       "url": "https://github.com/ai-native-camp/git-for-everyone.git"
     },
     "installLocation": "/Users/geonhee/.claude/plugins/marketplaces/git-for-everyone",
-    "lastUpdated": "2026-05-11T00:29:37.174Z"
+    "lastUpdated": "2026-05-11T00:32:13.415Z"
   },
   "chrome-devtools-plugins": {
     "source": {

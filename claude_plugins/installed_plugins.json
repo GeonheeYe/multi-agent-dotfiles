@@ -30,16 +30,6 @@
         "lastUpdated": "2026-02-21T07:58:34.699Z",
         "gitCommitSha": "add59d830b448fd44828b60a7309edf16431632a"
       }
-    ],
-    "chrome-devtools-mcp@claude-plugins-official": [
-      {
-        "scope": "user",
-        "installPath": "/home/ghye/.claude/plugins/cache/claude-plugins-official/chrome-devtools-mcp/0.22.0",
-        "version": "0.22.0",
-        "installedAt": "2026-03-16T00:13:17.836Z",
-        "lastUpdated": "2026-04-21T23:03:43.418Z",
-        "gitCommitSha": "c2d8009ff75f76bce1ec4cf79c2467b50d81725e"
-      }
     ]
   }
 }
