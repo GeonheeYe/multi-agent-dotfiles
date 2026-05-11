@@ -2,7 +2,6 @@
 
 ## 나는 누구인가
 - 예건희. AI 개발자, AI 서비스 개발 전문
-- 현재 주요 업무: RAG 기반 도메인 agent 설계 및 개발
 
 ## 소통 방식
 - 한국어로 대화, 주석도 한국어
@@ -26,6 +25,6 @@
 - 추측으로 진행 금지 — 모호하면 반드시 AskUserQuestion으로 먼저 확인
 
 ## 환경 관리
+- macOS, Ubuntu, Windows를 모두 사용하므로 OS별 차이를 고려해 각 환경에 맞게 안내하고 작업할 것
 - MCP 서버 추가/수정 시 반드시 ~/dotfiles/mcp/servers.json 먼저 업데이트 후 ./mcp/apply.sh 실행
 - 새 스킬 추가 시 ~/dotfiles/skills/ 에 저장 (자동으로 Claude Code, Codex, Cursor에 반영됨)
-
