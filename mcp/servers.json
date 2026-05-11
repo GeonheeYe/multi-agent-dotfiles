@@ -29,12 +29,6 @@
       "env": {
         "NOTION_TOKEN": "${NOTION_PERSONAL_API_TOKEN}"
       }
-    },
-    "kyro": {
-      "url": "https://hackathon.kyro.team/api/mcp",
-      "headers": {
-        "Authorization": "Bearer ${KYRO_API_TOKEN}"
-      }
     }
   }
 }

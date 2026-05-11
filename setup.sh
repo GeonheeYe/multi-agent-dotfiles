@@ -210,15 +210,48 @@ DOTFILES="${DOTFILES:-$DEFAULT_DOTFILES}"
 CODEX_SESSIONS_DIR="${CODEX_SESSIONS_DIR:-$WRAPPER_HOME/.codex/sessions}"
 
 latest_session_file() {
-  find "$CODEX_SESSIONS_DIR" -type f -name '*.jsonl' 2>/dev/null | while read -r path; do
-    stat -c '%Y %n' "$path" 2>/dev/null || true
-  done | sort -n | tail -n 1 | cut -d' ' -f2-
+  python3 - "$CODEX_SESSIONS_DIR" <<'PYEOF'
+import os
+import sys
+
+root = sys.argv[1]
+latest_path = ""
+latest_mtime = -1
+
+for dirpath, _, filenames in os.walk(root):
+    for filename in filenames:
+        if not filename.endswith(".jsonl"):
+            continue
+        path = os.path.join(dirpath, filename)
+        try:
+            mtime = os.path.getmtime(path)
+        except OSError:
+            continue
+        if mtime > latest_mtime:
+            latest_mtime = mtime
+            latest_path = path
+
+if latest_path:
+    print(latest_path)
+PYEOF
+}
+
+file_mtime() {
+  python3 - "$1" <<'PYEOF'
+import os
+import sys
+
+try:
+    print(int(os.path.getmtime(sys.argv[1])))
+except OSError:
+    print(0)
+PYEOF
 }
 
 before_file="$(latest_session_file)"
 before_mtime=0
 if [ -n "${before_file:-}" ] && [ -f "$before_file" ]; then
-  before_mtime="$(stat -c '%Y' "$before_file" 2>/dev/null || echo 0)"
+  before_mtime="$(file_mtime "$before_file")"
 fi
 
 real_bin=""
@@ -250,7 +283,7 @@ fi
 after_file="$(latest_session_file)"
 after_mtime=0
 if [ -n "${after_file:-}" ] && [ -f "$after_file" ]; then
-  after_mtime="$(stat -c '%Y' "$after_file" 2>/dev/null || echo 0)"
+  after_mtime="$(file_mtime "$after_file")"
 fi
 
 if [ -x "$DOTFILES/scripts/save-session-scp.sh" ] && [ -n "${after_file:-}" ] && { [ "$after_file" != "${before_file:-}" ] || [ "$after_mtime" -gt "$before_mtime" ]; }; then
