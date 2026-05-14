@@ -192,6 +192,16 @@ def remote_dir() -> str:
     return os.environ.get("LONGMEMORY_REMOTE_DIR", "/home/geonhee/LONGMEMORY")
 
 
+def remote_first_enabled() -> bool:
+    return os.environ.get("LONGMEMORY_REMOTE_FIRST", "1") != "0"
+
+
+def remote_lookup_failed(data: dict[str, Any] | None) -> bool:
+    if not data:
+        return True
+    return data.get("error") in {"ssh_failed", "remote_failed", "json_parse_failed"}
+
+
 def load_remote_via_ssh(command: str, keyword: str | None = None) -> dict[str, Any] | None:
     host = remote_host()
     if not host:
@@ -201,10 +211,10 @@ def load_remote_via_ssh(command: str, keyword: str | None = None) -> dict[str, A
     cmd = ["ssh", "-o", "BatchMode=yes", "-o", "ConnectTimeout=5", host]
     remote_wiki = str(Path(remote_dir()) / "wiki")
     if command == "list":
-        remote_cmd = f"LONGMEMORY_WIKI_PATH={remote_wiki!r} python3 - list"
+        remote_cmd = f"LONGMEMORY_REMOTE_FIRST=0 LONGMEMORY_WIKI_PATH={remote_wiki!r} python3 - list"
     else:
         assert keyword is not None
-        remote_cmd = f"LONGMEMORY_WIKI_PATH={remote_wiki!r} python3 - load {keyword!r}"
+        remote_cmd = f"LONGMEMORY_REMOTE_FIRST=0 LONGMEMORY_WIKI_PATH={remote_wiki!r} python3 - load {keyword!r}"
     try:
         proc = subprocess.run(cmd + [remote_cmd], input=script_text, text=True, stdout=subprocess.PIPE, stderr=subprocess.PIPE, timeout=20)
     except Exception as exc:
@@ -214,8 +224,8 @@ def load_remote_via_ssh(command: str, keyword: str | None = None) -> dict[str, A
     try:
         data = json.loads(proc.stdout)
         if isinstance(data, dict):
-            data.setdefault("source", "remote")
-            data.setdefault("remote_host", host)
+            data["source"] = "remote"
+            data["remote_host"] = host
             return data
     except Exception as exc:
         return {"ok": False, "source": "remote", "error": "json_parse_failed", "detail": str(exc), "stdout": proc.stdout[-1000:]}
@@ -231,9 +241,13 @@ def main(argv: list[str]) -> int:
     load_p.add_argument("--recent-sessions", type=int, default=2)
     args = parser.parse_args(argv)
 
-    local = resolve_local_wiki()
-    # Prefer local when it exists; this covers running directly on geonhee-ubuntu/server.
     if args.cmd == "list":
+        if remote_first_enabled():
+            remote = load_remote_via_ssh("list")
+            if remote and not remote_lookup_failed(remote):
+                print(json.dumps(remote, ensure_ascii=False, indent=2))
+                return 0 if remote.get("ok", True) else 1
+        local = resolve_local_wiki()
         if local:
             print(json.dumps(list_local(local), ensure_ascii=False, indent=2))
             return 0
@@ -245,6 +259,12 @@ def main(argv: list[str]) -> int:
         return 1
 
     if args.cmd == "load":
+        if remote_first_enabled():
+            remote = load_remote_via_ssh("load", args.keyword)
+            if remote and not remote_lookup_failed(remote):
+                print(json.dumps(remote, ensure_ascii=False, indent=2))
+                return 0 if remote.get("ok") else 2
+        local = resolve_local_wiki()
         if local:
             data = load_local(local, args.keyword, recent_sessions=args.recent_sessions)
             print(json.dumps(data, ensure_ascii=False, indent=2))

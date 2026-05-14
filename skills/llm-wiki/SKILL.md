@@ -9,7 +9,7 @@ LONGMEMORY is the first-class backend for project/session context. Use this befo
 
 ## Loader
 
-Prefer the bundled loader; do not depend on a shell alias.
+Prefer the bundled loader; do not depend on a shell alias. The canonical LONGMEMORY wiki is on `geonhee-ubuntu`; the loader checks that remote wiki first by default and uses local wiki paths only when remote lookup fails or `LONGMEMORY_REMOTE_FIRST=0` is set.
 
 ```bash
 DOTFILES="${DOTFILES:-$(getent passwd "$(id -un)" | cut -d: -f6)/dotfiles}"
@@ -21,13 +21,16 @@ python3 "$DOTFILES/scripts/longmemory_loader.py" load 사주 --recent-sessions 3
 If `$DOTFILES` is unavailable, search for `longmemory_loader.py`; if running inside Hermes repo, use `skills/research/llm-wiki/scripts/longmemory_loader.py`.
 
 Path resolution order:
-1. `$LONGMEMORY_WIKI_PATH`
-2. `$LONGMEMORY_DIR/wiki`
-3. `$LONGMEMORY_PATH/wiki`
-4. `~/LONGMEMORY/wiki`, `$REAL_HOME/LONGMEMORY/wiki`, and the passwd database home `LONGMEMORY/wiki`
-5. `$WIKI_PATH`
-6. `~/wiki`, `$REAL_HOME/wiki`, and the passwd database home `wiki`
-7. SSH fallback to `LONGMEMORY_REMOTE_HOST`, `LONGMEMORY_SSH_HOST`, or default `geonhee-ubuntu`, using `LONGMEMORY_REMOTE_DIR` or `/home/geonhee/LONGMEMORY`. Set `LONGMEMORY_REMOTE_ENABLED=0` to disable remote fallback.
+1. SSH to `LONGMEMORY_REMOTE_HOST`, `LONGMEMORY_SSH_HOST`, or default `geonhee-ubuntu`, using `LONGMEMORY_REMOTE_DIR` or `/home/geonhee/LONGMEMORY`
+2. Local fallback paths, only when remote lookup fails or `LONGMEMORY_REMOTE_FIRST=0`:
+   - `$LONGMEMORY_WIKI_PATH`
+   - `$LONGMEMORY_DIR/wiki`
+   - `$LONGMEMORY_PATH/wiki`
+   - `~/LONGMEMORY/wiki`, `$REAL_HOME/LONGMEMORY/wiki`, and the passwd database home `LONGMEMORY/wiki`
+   - `$WIKI_PATH`
+   - `~/wiki`, `$REAL_HOME/wiki`, and the passwd database home `wiki`
+
+Set `LONGMEMORY_REMOTE_ENABLED=0` to disable remote lookup. Set `LONGMEMORY_REMOTE_FIRST=0` to prefer local paths for tests or explicitly local work.
 
 ## LONGMEMORY Layout
 
@@ -85,7 +88,7 @@ After that, this loader reads the updated `LONGMEMORY/wiki` consistently from He
 
 | Situation | Response |
 |---|---|
-| No local wiki | Try configured SSH fallback; otherwise report checked paths |
+| Remote unavailable | Try local wiki paths; otherwise report checked paths |
 | No keyword | List projects/topics |
 | Multiple matches | Ask user to choose exact slug |
 | No match | Show available projects/topics |
