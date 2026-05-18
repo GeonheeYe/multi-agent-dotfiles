@@ -9,7 +9,7 @@ LONGMEMORY is the first-class backend for project/session context. Use this befo
 
 ## Loader
 
-Prefer the bundled loader; do not depend on a shell alias. The canonical LONGMEMORY wiki is on `geonhee-ubuntu`; the loader checks that remote wiki first by default and uses local wiki paths only when remote lookup fails or `LONGMEMORY_REMOTE_FIRST=0` is set.
+Prefer the bundled loader; do not depend on a shell alias. The canonical wiki is `/home/geonhee/wiki` on `geonhee-ubuntu`; the loader checks that remote wiki first by default and uses local wiki paths only when remote lookup fails or `LONGMEMORY_REMOTE_FIRST=0` is set.
 
 ```bash
 DOTFILES="${DOTFILES:-$(getent passwd "$(id -un)" | cut -d: -f6)/dotfiles}"
@@ -21,7 +21,7 @@ python3 "$DOTFILES/scripts/longmemory_loader.py" load 사주 --recent-sessions 3
 If `$DOTFILES` is unavailable, search for `longmemory_loader.py`; if running inside Hermes repo, use `skills/research/llm-wiki/scripts/longmemory_loader.py`.
 
 Path resolution order:
-1. SSH to `LONGMEMORY_REMOTE_HOST`, `LONGMEMORY_SSH_HOST`, or default `geonhee-ubuntu`, using `LONGMEMORY_REMOTE_DIR` or `/home/geonhee/LONGMEMORY`
+1. SSH to `LONGMEMORY_REMOTE_HOST`, `LONGMEMORY_SSH_HOST`, or default `geonhee-ubuntu`, using `LONGMEMORY_REMOTE_WIKI_PATH`, `LONGMEMORY_REMOTE_WIKI_DIR`, legacy `LONGMEMORY_REMOTE_DIR/wiki`, or default `/home/geonhee/wiki`
 2. Local fallback paths, only when remote lookup fails or `LONGMEMORY_REMOTE_FIRST=0`:
    - `$LONGMEMORY_WIKI_PATH`
    - `$LONGMEMORY_DIR/wiki`
@@ -82,7 +82,7 @@ LONGMEMORY_DIR=$LONGMEMORY_REMOTE_DIR python3 $LONGMEMORY_REMOTE_DIR/bin/process
 LONGMEMORY_DIR=$LONGMEMORY_REMOTE_DIR python3 $LONGMEMORY_REMOTE_DIR/bin/update_longmemory_wiki.py
 ```
 
-After that, this loader reads the updated `LONGMEMORY/wiki` consistently from Hermes, Claude, Codex, Cursor, Telegram, or Discord.
+After that, this loader reads the updated remote wiki consistently from Hermes, Claude, Codex, Cursor, Telegram, or Discord.
 
 ## Error Handling
 

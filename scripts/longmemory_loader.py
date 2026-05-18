@@ -100,8 +100,9 @@ def list_local(wiki: Path) -> dict[str, Any]:
     projects_dir = wiki / "projects"
     topics_dir = wiki / "topics"
     projects = _parse_index(wiki / "index.md")
-    if not projects and projects_dir.is_dir():
-        projects = sorted(p.name for p in projects_dir.iterdir() if p.is_dir())
+    if projects_dir.is_dir():
+        project_dirs = [p.name for p in projects_dir.iterdir() if p.is_dir()]
+        projects = sorted(set(projects) | set(project_dirs))
     topics = sorted(p.name for p in topics_dir.iterdir() if p.is_dir()) if topics_dir.is_dir() else []
     return {"source": "local", "wiki": str(wiki), "projects": projects, "topics": topics}
 
@@ -189,7 +190,17 @@ def remote_host() -> str | None:
 
 
 def remote_dir() -> str:
-    return os.environ.get("LONGMEMORY_REMOTE_DIR", "/home/geonhee/LONGMEMORY")
+    return os.environ.get("LONGMEMORY_REMOTE_DIR", "/home/geonhee")
+
+
+def remote_wiki_path() -> str:
+    if os.environ.get("LONGMEMORY_REMOTE_WIKI_PATH"):
+        return os.environ["LONGMEMORY_REMOTE_WIKI_PATH"]
+    if os.environ.get("LONGMEMORY_REMOTE_WIKI_DIR"):
+        return os.environ["LONGMEMORY_REMOTE_WIKI_DIR"]
+    if os.environ.get("LONGMEMORY_REMOTE_DIR"):
+        return str(Path(remote_dir()) / "wiki")
+    return "/home/geonhee/wiki"
 
 
 def remote_first_enabled() -> bool:
@@ -209,7 +220,7 @@ def load_remote_via_ssh(command: str, keyword: str | None = None) -> dict[str, A
     script = Path(__file__).resolve()
     script_text = script.read_text(encoding="utf-8")
     cmd = ["ssh", "-o", "BatchMode=yes", "-o", "ConnectTimeout=5", host]
-    remote_wiki = str(Path(remote_dir()) / "wiki")
+    remote_wiki = remote_wiki_path()
     if command == "list":
         remote_cmd = f"LONGMEMORY_REMOTE_FIRST=0 LONGMEMORY_WIKI_PATH={remote_wiki!r} python3 - list"
     else:
