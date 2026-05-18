@@ -344,7 +344,9 @@ cat > "$HOME/bin/cdd-work" <<'EOF'
 #!/usr/bin/env bash
 set -euo pipefail
 
-DOTFILES="${DOTFILES:-$HOME/dotfiles}"
+WRAPPER_HOME="$(cd "$(dirname "${BASH_SOURCE[0]}")/.." && pwd)"
+DOTFILES="${DOTFILES:-$WRAPPER_HOME/dotfiles}"
+DOTFILES_HOME="${DOTFILES_HOME:-$WRAPPER_HOME}"
 source "$DOTFILES/shell/aliases.sh"
 
 cdd-work "$@"
@@ -356,7 +358,9 @@ cat > "$HOME/bin/cdd-personal" <<'EOF'
 #!/usr/bin/env bash
 set -euo pipefail
 
-DOTFILES="${DOTFILES:-$HOME/dotfiles}"
+WRAPPER_HOME="$(cd "$(dirname "${BASH_SOURCE[0]}")/.." && pwd)"
+DOTFILES="${DOTFILES:-$WRAPPER_HOME/dotfiles}"
+DOTFILES_HOME="${DOTFILES_HOME:-$WRAPPER_HOME}"
 source "$DOTFILES/shell/aliases.sh"
 
 cdd-personal "$@"
@@ -368,7 +372,9 @@ cat > "$HOME/bin/cdd-personal-login" <<'EOF'
 #!/usr/bin/env bash
 set -euo pipefail
 
-DOTFILES="${DOTFILES:-$HOME/dotfiles}"
+WRAPPER_HOME="$(cd "$(dirname "${BASH_SOURCE[0]}")/.." && pwd)"
+DOTFILES="${DOTFILES:-$WRAPPER_HOME/dotfiles}"
+DOTFILES_HOME="${DOTFILES_HOME:-$WRAPPER_HOME}"
 source "$DOTFILES/shell/aliases.sh"
 
 cdd-personal-login "$@"
