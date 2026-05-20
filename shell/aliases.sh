@@ -37,13 +37,41 @@ _find_real_codex_bin() {
   fi
 
   real_bin=""
+  first_bin=""
+  versioned_bins=""
   if [ -n "${BASH_VERSION:-}" ]; then
-    real_bin="$(type -aP codex 2>/dev/null | grep -vx "$DOTFILES_HOME/bin/codex" | head -n 1)"
+    codex_bins="$(type -aP codex 2>/dev/null || true)"
   elif [ -n "${ZSH_VERSION:-}" ]; then
-    real_bin="$(whence -ap codex 2>/dev/null | grep -vx "$DOTFILES_HOME/bin/codex" | head -n 1)"
+    codex_bins="$(whence -ap codex 2>/dev/null || true)"
+  else
+    codex_bins="$(command -v codex 2>/dev/null || true)"
   fi
 
-  if [ -n "$real_bin" ] && [ -x "$real_bin" ]; then
+  while IFS= read -r candidate; do
+    [ -n "$candidate" ] || continue
+    [ "$candidate" != "$DOTFILES_HOME/bin/codex" ] || continue
+    [ -x "$candidate" ] || continue
+    case ":$seen_bins:" in
+      *":$candidate:"*) continue ;;
+    esac
+    seen_bins="${seen_bins:-}:$candidate"
+    [ -n "$first_bin" ] || first_bin="$candidate"
+    candidate_version="$("$candidate" --version 2>/dev/null | sed -nE 's/.*([0-9]+\.[0-9]+\.[0-9]+).*/\1/p' | head -n 1 || true)"
+    if [ -n "$candidate_version" ]; then
+      versioned_bins="${versioned_bins}${candidate_version}	${candidate}
+"
+    fi
+  done <<EOF
+$codex_bins
+EOF
+
+  if [ -n "$versioned_bins" ]; then
+    real_bin="$(printf '%s' "$versioned_bins" | sort -t '	' -k1,1V | tail -n 1 | cut -f2-)"
+  else
+    real_bin="$first_bin"
+  fi
+
+  if [ -n "${real_bin:-}" ] && [ -x "$real_bin" ]; then
     printf '%s\n' "$real_bin"
     return 0
   fi

@@ -78,4 +78,34 @@ login_output="$(
 )"
 assert_contains "$login_output" "real:$temp_home/.codex-personal-home args:login status" "cdd-personal-login should use personal HOME without bypass flag"
 
+mkdir -p "$temp_home/old-codex/bin" "$temp_home/new-codex/bin"
+cat >"$temp_home/bin/codex" <<'EOF'
+#!/usr/bin/env bash
+echo wrapper
+EOF
+cat >"$temp_home/old-codex/bin/codex" <<'EOF'
+#!/usr/bin/env bash
+if [ "${1:-}" = "--version" ]; then
+  echo "codex-cli 0.130.0"
+  exit 0
+fi
+echo old-codex
+EOF
+cat >"$temp_home/new-codex/bin/codex" <<'EOF'
+#!/usr/bin/env bash
+if [ "${1:-}" = "--version" ]; then
+  echo "codex-cli 0.131.0"
+  exit 0
+fi
+echo new-codex
+EOF
+chmod +x "$temp_home/bin/codex" "$temp_home/old-codex/bin/codex" "$temp_home/new-codex/bin/codex"
+latest_codex_output="$(
+  HOME="$temp_home" DOTFILES="$temp_home/dotfiles" PATH="$temp_home/bin:$temp_home/old-codex/bin:$temp_home/new-codex/bin:$PATH" /bin/bash -lc '
+    source "'"$ALIASES"'"
+    _find_real_codex_bin
+  '
+)"
+assert_contains "$latest_codex_output" "$temp_home/new-codex/bin/codex" "_find_real_codex_bin should select the newest codex version on PATH"
+
 echo "PASS"

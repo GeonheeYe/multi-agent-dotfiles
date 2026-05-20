@@ -277,13 +277,51 @@ except OSError:
     print(0)' "$1"
 }
 
+find_real_codex_bin() {
+  local codex_bins
+  local candidate
+  local candidate_version
+  local first_bin=""
+  local real_bin=""
+  local seen_bins=""
+  local versioned_bins=""
+
+  codex_bins="$(type -aP "codex" 2>/dev/null || true)"
+  while IFS= read -r candidate; do
+    [ -n "$candidate" ] || continue
+    [ "$candidate" != "$WRAPPER_PATH" ] || continue
+    [ -x "$candidate" ] || continue
+    case ":$seen_bins:" in
+      *":$candidate:"*) continue ;;
+    esac
+    seen_bins="${seen_bins:-}:$candidate"
+    [ -n "$first_bin" ] || first_bin="$candidate"
+    candidate_version="$("$candidate" --version 2>/dev/null | sed -nE 's/.*([0-9]+\.[0-9]+\.[0-9]+).*/\1/p' | head -n 1 || true)"
+    if [ -n "$candidate_version" ]; then
+      versioned_bins="${versioned_bins}${candidate_version}	${candidate}
+"
+    fi
+  done <<EOF
+$codex_bins
+EOF
+
+  if [ -n "$versioned_bins" ]; then
+    real_bin="$(printf '%s' "$versioned_bins" | sort -t '	' -k1,1V | tail -n 1 | cut -f2-)"
+  else
+    real_bin="$first_bin"
+  fi
+
+  [ -n "$real_bin" ] || return 1
+  printf '%s\n' "$real_bin"
+}
+
 before_file="$(latest_session_file)"
 before_mtime=0
 if [ -n "${before_file:-}" ] && [ -f "$before_file" ]; then
   before_mtime="$(file_mtime "$before_file")"
 fi
 
-real_bin="$(type -aP "codex" | grep -vx "$WRAPPER_PATH" | head -n 1 || true)"
+real_bin="$(find_real_codex_bin || true)"
 if [ -z "$real_bin" ]; then
   printf 'codex command not found\n' >&2
   exit 127
