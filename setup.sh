@@ -234,7 +234,7 @@ EOF
 chmod +x "$HOME/bin/claude"
 echo "✓ ~/bin/claude"
 
-cat > "$HOME/bin/codex" <<'EOF'
+cat > "$HOME/bin/codex" <<'CODEX_WRAPPER_EOF'
 #!/usr/bin/env bash
 set -euo pipefail
 
@@ -356,7 +356,7 @@ PYEOF
 fi
 
 exit "$status"
-EOF
+CODEX_WRAPPER_EOF
 chmod +x "$HOME/bin/codex"
 echo "✓ ~/bin/codex"
 
