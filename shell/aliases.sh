@@ -26,6 +26,71 @@ _dotfiles_push() {
   fi
 }
 
+_path_prepend_once() {
+  case ":$PATH:" in
+    *":$1:"*) ;;
+    *) PATH="$1:$PATH" ;;
+  esac
+  export PATH
+}
+
+_refresh_command_hash() {
+  hash -r 2>/dev/null || true
+  rehash 2>/dev/null || true
+}
+
+_codex_update_cache_fresh() {
+  local cache_file="$1"
+  local ttl="${CODEX_UPDATE_CACHE_TTL:-86400}"
+  local now
+  local last
+
+  [ "$ttl" -gt 0 ] 2>/dev/null || return 1
+  [ -f "$cache_file" ] || return 1
+
+  now="$(date +%s 2>/dev/null || echo 0)"
+  last="$(stat -c '%Y' "$cache_file" 2>/dev/null || stat -f '%m' "$cache_file" 2>/dev/null || echo 0)"
+  [ $((now - last)) -lt "$ttl" ]
+}
+
+_ensure_latest_codex() {
+  local cache_file="${CODEX_UPDATE_CACHE_FILE:-$DOTFILES_HOME/.cache/codex-update-check}"
+  local npm_prefix
+  local installed_version
+  local latest_version
+
+  [ "${CODEX_AUTO_UPDATE:-1}" != "0" ] || return 0
+  [ -z "${REAL_CODEX_BIN:-}" ] || return 0
+  _require_cmd npm || return 0
+  _codex_update_cache_fresh "$cache_file" && return 0
+
+  npm_prefix="$(npm config get prefix 2>/dev/null || true)"
+  if [ -z "$npm_prefix" ] || [ "$npm_prefix" = "undefined" ]; then
+    npm_prefix="$HOME/.npm-global"
+  fi
+
+  if ! mkdir -p "$npm_prefix/bin" "$npm_prefix/lib/node_modules" 2>/dev/null; then
+    npm_prefix="$HOME/.npm-global"
+    mkdir -p "$npm_prefix/bin" "$npm_prefix/lib/node_modules" 2>/dev/null || return 0
+  fi
+
+  _path_prepend_once "$npm_prefix/bin"
+
+  latest_version="$(npm show @openai/codex version 2>/dev/null || true)"
+  [ -n "$latest_version" ] || {
+    mkdir -p "$(dirname "$cache_file")" 2>/dev/null && : >"$cache_file" 2>/dev/null || true
+    return 0
+  }
+
+  installed_version="$(npm list -g @openai/codex --depth=0 2>/dev/null | sed -nE 's/.*@openai\/codex@([^[:space:]]+).*/\1/p' | head -n 1 || true)"
+  if [ "$installed_version" != "$latest_version" ]; then
+    npm_config_prefix="$npm_prefix" npm install -g "@openai/codex@$latest_version" >/dev/null 2>&1 || return 0
+    _refresh_command_hash
+  fi
+
+  mkdir -p "$(dirname "$cache_file")" 2>/dev/null && : >"$cache_file" 2>/dev/null || true
+}
+
 _s20_openclaw() {
   "$DOTFILES/scripts/s20-openclaw.sh" "$@"
 }
@@ -148,6 +213,8 @@ _run_codex_with_home() {
   local exit_code
   local had_errexit=0
 
+  _ensure_latest_codex
+
   real_bin="$(_find_real_codex_bin)" || {
     printf 'codex command not found\n' >&2
     return 127
@@ -233,6 +300,7 @@ ccr() {
 
 # Codex
 cdd() {
+  _ensure_latest_codex
   if _require_cmd codex; then
     codex --dangerously-bypass-approvals-and-sandbox "$@"
     _dotfiles_push

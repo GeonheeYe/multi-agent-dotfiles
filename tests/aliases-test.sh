@@ -108,4 +108,47 @@ latest_codex_output="$(
 )"
 assert_contains "$latest_codex_output" "$temp_home/new-codex/bin/codex" "_find_real_codex_bin should select the newest codex version on PATH"
 
+mkdir -p "$temp_home/fake-npm/bin" "$temp_home/fake-npm/prefix/bin" "$temp_home/fake-npm/prefix/lib/node_modules/@openai/codex/bin"
+cat >"$temp_home/fake-npm/bin/npm" <<'EOF'
+#!/usr/bin/env bash
+case "$*" in
+  "config get prefix")
+    printf '%s\n' "$FAKE_NPM_PREFIX"
+    ;;
+  "show @openai/codex version")
+    echo "0.132.0"
+    ;;
+  "list -g @openai/codex --depth=0")
+    echo "$FAKE_NPM_PREFIX/lib"
+    echo "└── @openai/codex@0.131.0"
+    ;;
+  "install -g @openai/codex@0.132.0")
+    printf 'install:%s\n' "$*" >>"$FAKE_NPM_LOG"
+    ln -sfn ../lib/node_modules/@openai/codex/bin/codex.js "$FAKE_NPM_PREFIX/bin/codex"
+    ;;
+  *)
+    echo "unexpected npm args: $*" >&2
+    exit 2
+    ;;
+esac
+EOF
+cat >"$temp_home/fake-npm/prefix/lib/node_modules/@openai/codex/bin/codex.js" <<'EOF'
+#!/usr/bin/env bash
+if [ "${1:-}" = "--version" ]; then
+  echo "codex-cli 0.132.0"
+  exit 0
+fi
+echo updated-codex
+EOF
+chmod +x "$temp_home/fake-npm/bin/npm" "$temp_home/fake-npm/prefix/lib/node_modules/@openai/codex/bin/codex.js"
+ensure_latest_output="$(
+  HOME="$temp_home" DOTFILES="$temp_home/dotfiles" FAKE_NPM_PREFIX="$temp_home/fake-npm/prefix" FAKE_NPM_LOG="$temp_home/fake-npm/install.log" PATH="$temp_home/fake-npm/bin:$temp_home/bin:$temp_home/old-codex/bin:$temp_home/new-codex/bin:$PATH" CODEX_UPDATE_CACHE_TTL=0 /bin/bash -lc '
+    source "'"$ALIASES"'"
+    _ensure_latest_codex
+    _find_real_codex_bin
+  '
+)"
+assert_contains "$ensure_latest_output" "$temp_home/fake-npm/prefix/bin/codex" "_ensure_latest_codex should refresh PATH hashing and expose the updated npm codex binary"
+assert_contains "$(cat "$temp_home/fake-npm/install.log")" "install:install -g @openai/codex@0.132.0" "_ensure_latest_codex should install the latest codex version when npm reports an update"
+
 echo "PASS"

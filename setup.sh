@@ -248,7 +248,12 @@ if [ ! -d "$DEFAULT_DOTFILES" ]; then
   fi
 fi
 DOTFILES="${DOTFILES:-$DEFAULT_DOTFILES}"
+DOTFILES_HOME="${DOTFILES_HOME:-$WRAPPER_HOME}"
 CODEX_SESSIONS_DIR="${CODEX_SESSIONS_DIR:-$WRAPPER_HOME/.codex/sessions}"
+
+if [ -f "$DOTFILES/shell/aliases.sh" ]; then
+  source "$DOTFILES/shell/aliases.sh"
+fi
 
 latest_session_file() {
   python3 -c 'import os, sys
@@ -319,6 +324,10 @@ before_file="$(latest_session_file)"
 before_mtime=0
 if [ -n "${before_file:-}" ] && [ -f "$before_file" ]; then
   before_mtime="$(file_mtime "$before_file")"
+fi
+
+if type _ensure_latest_codex >/dev/null 2>&1; then
+  _ensure_latest_codex
 fi
 
 real_bin="$(find_real_codex_bin || true)"
@@ -640,14 +649,12 @@ fi
 
 # --- codex 최신 버전 유지 ---
 if command -v npm >/dev/null 2>&1; then
-  INSTALLED_CODEX="$(npm list -g @openai/codex --prefix "$(npm root -g)/.." 2>/dev/null | grep '@openai/codex@' | sed 's/.*@//' || echo '')"
-  LATEST_CODEX="$(npm show @openai/codex version 2>/dev/null || echo '')"
-  if [ -n "$LATEST_CODEX" ] && [ "$INSTALLED_CODEX" != "$LATEST_CODEX" ]; then
-    echo "codex 업그레이드 중: ${INSTALLED_CODEX:-없음} → $LATEST_CODEX"
-    npm install -g "@openai/codex@$LATEST_CODEX" || echo "⚠ codex 업그레이드 실패 — 계속 진행"
-  else
-    echo "✓ codex 최신 버전: ${INSTALLED_CODEX}"
-  fi
+  DOTFILES_HOME="${DOTFILES_HOME:-$HOME}"
+  # shell/aliases.sh의 동일한 업데이트 경로를 사용해 setup과 평소 실행 동작을 맞춘다.
+  source "$DOTFILES/shell/aliases.sh"
+  CODEX_UPDATE_CACHE_TTL=0 _ensure_latest_codex
+  INSTALLED_CODEX="$(npm list -g @openai/codex --depth=0 2>/dev/null | sed -nE 's/.*@openai\/codex@([^[:space:]]+).*/\1/p' | head -n 1 || echo '')"
+  echo "✓ codex 버전 확인 완료: ${INSTALLED_CODEX:-설치 확인 실패}"
 else
   echo "⚠ npm 없음 — codex 업그레이드 건너뜀"
 fi
