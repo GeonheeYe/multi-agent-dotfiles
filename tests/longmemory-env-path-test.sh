@@ -90,7 +90,7 @@ remote_ssh_log="$temp_home/remote-ssh.log"
 cat >"$fakebin/ssh" <<'EOF'
 #!/usr/bin/env bash
 printf 'ssh %s\n' "$*" >>"$FAKE_SSH_LOG"
-printf '{"ok": true, "source": "local", "wiki": "/home/geonhee/LONGMEMORY/wiki", "projects": ["aegis-ap"], "topics": []}\n'
+printf '{"ok": true, "source": "local", "wiki": "/home/geonhee/wiki", "projects": ["aegis-ap"], "topics": []}\n'
 EOF
 chmod +x "$fakebin/ssh"
 
@@ -106,7 +106,7 @@ env -u WIKI_PATH -u LONGMEMORY_WIKI_PATH -u LONGMEMORY_DIR -u LONGMEMORY_PATH -u
 
 grep -Fq "geonhee-ubuntu" "$remote_ssh_log" \
   || fail "loader should default remote fallback to geonhee-ubuntu"
-grep -Fq "LONGMEMORY_WIKI_PATH='/home/geonhee/LONGMEMORY/wiki'" "$remote_ssh_log" \
+grep -Fq "LONGMEMORY_WIKI_PATH='/home/geonhee/wiki'" "$remote_ssh_log" \
   || fail "loader should read canonical geonhee-ubuntu LONGMEMORY wiki by default"
 grep -Fq "LONGMEMORY_REMOTE_FIRST=0" "$remote_ssh_log" \
   || fail "remote loader invocation should disable nested remote-first lookup"
