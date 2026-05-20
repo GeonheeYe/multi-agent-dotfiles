@@ -101,7 +101,7 @@ echo new-codex
 EOF
 chmod +x "$temp_home/bin/codex" "$temp_home/old-codex/bin/codex" "$temp_home/new-codex/bin/codex"
 latest_codex_output="$(
-  HOME="$temp_home" DOTFILES="$temp_home/dotfiles" PATH="$temp_home/bin:$temp_home/old-codex/bin:$temp_home/new-codex/bin:$PATH" /bin/bash -lc '
+  HOME="$temp_home" DOTFILES="$temp_home/dotfiles" PATH="$temp_home/bin:$temp_home/old-codex/bin:$temp_home/new-codex/bin:/usr/local/sbin:/usr/local/bin:/usr/sbin:/usr/bin:/sbin:/bin" /bin/bash -c '
     source "'"$ALIASES"'"
     _find_real_codex_bin
   '
@@ -142,7 +142,7 @@ echo updated-codex
 EOF
 chmod +x "$temp_home/fake-npm/bin/npm" "$temp_home/fake-npm/prefix/lib/node_modules/@openai/codex/bin/codex.js"
 ensure_latest_output="$(
-  HOME="$temp_home" DOTFILES="$temp_home/dotfiles" FAKE_NPM_PREFIX="$temp_home/fake-npm/prefix" FAKE_NPM_LOG="$temp_home/fake-npm/install.log" PATH="$temp_home/fake-npm/bin:$temp_home/bin:$temp_home/old-codex/bin:$temp_home/new-codex/bin:$PATH" CODEX_UPDATE_CACHE_TTL=0 /bin/bash -lc '
+  HOME="$temp_home" DOTFILES="$temp_home/dotfiles" FAKE_NPM_PREFIX="$temp_home/fake-npm/prefix" FAKE_NPM_LOG="$temp_home/fake-npm/install.log" PATH="$temp_home/fake-npm/bin:$temp_home/bin:$temp_home/old-codex/bin:$temp_home/new-codex/bin:/usr/local/sbin:/usr/local/bin:/usr/sbin:/usr/bin:/sbin:/bin" CODEX_UPDATE_CACHE_TTL=0 /bin/bash -c '
     source "'"$ALIASES"'"
     _ensure_latest_codex
     _find_real_codex_bin
