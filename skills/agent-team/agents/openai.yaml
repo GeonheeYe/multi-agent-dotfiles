@@ -1,4 +1,11 @@
+# Platform metadata for OpenAI/Codex launch surfaces. The skill runtime does not
+# read this file as an execution input.
 interface:
   display_name: "에이전트 팀"
-  short_description: "5개 역할 기반 AI 기능 개발 흐름"
-  default_prompt: "$agent-team을 사용해서 PM, Architect, Developer, Reviewer, Domain Expert 역할로 AI 기능 개발을 진행해줘. 기본 실행은 auto_split(역할 분리)로 처리하고, 산출물은 docs/agent-team/<run-id>/에 저장해줘."
+  short_description: "5역할 순차 실행 AI 기능 개발 워크플로우"
+  icon_small: "./assets/agent-team-small.svg"
+  default_prompt: "$agent-team으로 PM, Domain Expert, Architect, Developer, Reviewer 역할을 순차 실행해 AI 기능을 기획·구현·검토해줘."
+
+policy:
+  # 명시 호출 전용. `$agent-team`을 사용자가 직접 입력했을 때만 활성화한다.
+  allow_implicit_invocation: false
