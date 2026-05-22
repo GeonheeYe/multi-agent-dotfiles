@@ -1,0 +1,4 @@
+interface:
+  display_name: "에이전트 팀"
+  short_description: "5개 역할 기반 AI 기능 개발 흐름"
+  default_prompt: "$agent-team을 사용해서 PM, Architect, Developer, Reviewer, Domain Expert 역할로 AI 기능 개발을 진행해줘. 기본 실행은 auto_split(역할 분리)로 처리하고, 산출물은 docs/agent-team/<run-id>/에 저장해줘."

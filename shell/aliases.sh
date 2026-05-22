@@ -104,6 +104,7 @@ _find_real_codex_bin() {
   real_bin=""
   first_bin=""
   versioned_bins=""
+  seen_bins=""
   if [ -n "${BASH_VERSION:-}" ]; then
     codex_bins="$(type -aP codex 2>/dev/null || true)"
   elif [ -n "${ZSH_VERSION:-}" ]; then
