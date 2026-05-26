@@ -18,3 +18,12 @@ Host geonhee-ubuntu
     IdentitiesOnly yes
     ServerAliveInterval 30
     ServerAliveCountMax 3
+
+Host 103
+    HostName 10.253.12.103
+    Port 22
+    User ghye
+    IdentityFile ~/.ssh/id_ed25519_103
+    IdentitiesOnly yes
+    ServerAliveInterval 30
+    ServerAliveCountMax 3
