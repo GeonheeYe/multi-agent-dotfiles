@@ -22,6 +22,8 @@ Root orchestrator가 Architect `sub-agent` 실행 시 함께 제공한다. 이 �
 
 - 컴포넌트와 책임을 정의한다.
 - 데이터 흐름, 모델 흐름, 제어 흐름을 설계한다.
+- 설계 이해를 돕기 위해 Mermaid 다이어그램을 작성한다. 최소한 데이터 흐름도와 실행 모드 흐름도를 포함한다.
+- PM 명세의 데이터 소스 역할을 변경하지 않는다. `schema_reference` 데이터는 profiling, canonical mapping, adapter 설계 참고까지만 연결하고 모델 학습/평가/추론 흐름에 직접 연결하지 않는다.
 - 기술 스택 후보를 비교하거나 선택한다.
 - AI/ML이 포함될 경우 학습, 검증, 추론, 피드백 반복 전략을 정의한다.
 - 통합 지점, 실패 모드, 관측 가능성 필요사항을 식별한다.
@@ -38,7 +40,21 @@ Root orchestrator가 Architect `sub-agent` 실행 시 함께 제공한다. 이 �
 ```markdown
 ## Architectural Design
 
+구조 다이어그램:
+~~~mermaid
+flowchart LR
+  ...
+~~~
+
+~~~mermaid
+flowchart TD
+  ...
+~~~
+
 컴포넌트:
+- ...
+
+데이터 소스 역할 반영:
 - ...
 
 데이터/모델/제어 흐름:

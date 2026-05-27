@@ -6,7 +6,7 @@
 
 `$agent-team`은 Root orchestrator가 통제하는 구조다.
 
-- Root orchestrator: 실행 디렉터리 준비, `run-state.json` 갱신, 산출물 경로/존재 확인, `stage gate`, Domain Expert Gateway 결과를 `last_decision`에 기록하고 분기하는 일, `gateway_retry_count`/`review_retry_count` 관리, `Blocked` 상태의 사용자 입력 요청, `user_final_confirmation`, `09-final-report.md` 작성을 담당한다.
+- Root orchestrator: 실행 디렉터리 준비, 초기 파일 생성, `run-state.json` 갱신, 산출물 경로/존재 확인, `stage gate`, Domain Expert Gateway 결과를 `last_decision`에 기록하고 분기하는 일, `gateway_retry_count`/`review_retry_count` 관리, `Blocked` 상태의 사용자 입력 요청, `user_final_confirmation`, `09-final-report.md` 작성을 담당한다. 프로젝트 의미 정리와 PM 인터뷰 내용은 직접 작성하지 않는다.
 - 고정 역할: PM, Domain Expert, Architect, Developer, Reviewer. `auto_split`에서는 각 역할이 `sub-agent`로 실행되고, `single_session`에서는 역할 라벨로 실행된다. 흐름 순서 밖에서 서로 직접 지시하지 않는다.
 
 실행은 `execution_mode`로 구분한다:
@@ -26,12 +26,18 @@ Codex 런타임 규칙:
 - 서브에이전트 실행 도구를 사용할 수 없으면 `execution_mode`를 `single_session`으로 기록하고 시작 출력에 `execution_mode` 전환 이유를 한 줄로 표시한다. 전환 이유에는 시도한 도구 이름이나 "서브에이전트 분리 실행 도구 없음" 중 하나를 적는다.
 - `sub-agent`는 순차 호출한다. 다음 역할을 시작하려면 이전 역할의 출력 파일과 Root orchestrator 수신 검증이 끝나야 한다.
 
-## 역할 간 `handoff`와 `briefs/<role>.md` 갱신
+## 초기 파일 생성과 PM 인터뷰
 
-Root orchestrator는 각 단계 시작 전에 다음 역할의 `briefs/<role>.md`를 준비한다. 이 파일 안에 `handoff` 섹션을 포함한다.
+Root orchestrator는 PM 역할을 시작하기 전에 실행 메타정보만 `00-run-setup.md`에 작성한다. 실행 메타정보는 `run-id`, 실행 위치, `mode`, `execution_mode`, 실행 디렉터리, 생성한 초기 파일 목록이다. 프로젝트 의미, 초기 목표, 주요 사용자, 해결하려는 일/결정, 입력 데이터, 기대 출력, 성공 기준, 기술 방향/플랫폼 제약/선호는 PM 인터뷰 책임이다.
+
+PM은 `pm_spec` 단계에서 사용자 인터뷰와 기능 명세 작성을 함께 수행한다. PM은 한 번에 한 가지씩 질문한다. `auto_split`에서 PM이 사용자에게 직접 질문할 수 없으면, PM은 다음 질문과 질문 이유를 보고하고 Root orchestrator는 그 질문을 그대로 사용자에게 전달한다. 사용자의 답변은 PM에게 다시 전달하고 `00-pm-interview.md`에 누적한다. 이미 인터뷰 질문과 답변이 진행된 상태라면, PM은 그 내용을 `00-pm-interview.md`에 인터뷰 기록으로 정리하고 바로 `01-pm-spec.md`를 작성할 수 있다.
+
+Root orchestrator는 각 역할 단계 시작 전에 다음 역할의 `briefs/<role>.md`를 준비한다. 이 파일은 사람이 읽는 작업 지시와 실행 추적용 `System Handoff`를 함께 포함한다.
 
 - Root orchestrator가 `briefs/<role>.md`를 생성 또는 갱신해 입력만 전달하고, 역할별 산출물은 해당 출력 파일에만 작성한다.
-- `handoff` 핵심 필드는 `run-id`, `current_stage`, `next_stage`, `required_inputs`, `required_outputs`, `constraints`, `assumptions_to_consider`다.
+- 상단 작업 지시 핵심 필드는 `작업 목표`, `해야 할 일`, `입력`, `출력`, `범위`, `완료 기준`이다.
+- 하단 `System Handoff` 핵심 필드는 `run-id`, `execution_mode`, `current_stage`, `next_stage`, `sender`, `receiver`, `run-state.json`이다.
+- `briefs/pm.md`는 초기 파일 생성과 컨텍스트 로드가 끝나면 생성한다. PM은 `00-run-setup.md`, `00-context.md`, 기존 `00-pm-interview.md`를 바탕으로 필요한 인터뷰를 수행하고 `01-pm-spec.md`를 작성한다.
 - 역할이 완료되면 Root orchestrator가 `stage gate`를 수행한다. 해당 출력 파일 존재와 최소 검증 항목을 먼저 확인한 뒤 `run-state.json`의 `current_stage`/`last_completed_stage`/`next_stage`를 갱신한다.
 - `stage gate` 실패면 `stage_gate_failure` 항목을 수정/재실행 대상 역할의 `briefs/<role>.md`에 기록한다. `stage_gate_failure`에는 누락된 산출물, 누락된 필수 섹션, 잘못된 `run-state.json` 값, 다음 시도에서 고쳐야 할 내용을 적는다.
 
@@ -84,7 +90,7 @@ Root orchestrator는 각 단계 시작 전에 다음 역할의 `briefs/<role>.md
 
 - `initialized`
 - `context_load`
-- `briefs_created`: 초기 `briefs/<role>.md` scaffold 생성 완료. 이후 단계별 `handoff` 내용은 각 역할 시작 전에 계속 갱신한다.
+- `briefs_created`: 초기 파일 생성과 컨텍스트 로드 후 초기 역할별 `briefs/<role>.md` scaffold 생성 완료. 이후 단계별 `handoff` 내용은 각 역할 시작 전에 계속 갱신한다.
 - `pm_spec`
 - `expert_gateway_spec`
 - `architect_design`
@@ -100,6 +106,12 @@ Root orchestrator는 각 단계 시작 전에 다음 역할의 `briefs/<role>.md
 
 - 단계 시작 시 `current_stage`를 지금 실행하는 단계 값으로 갱신한다. 예: PM 명세를 작성하기 시작하면 `current_stage`는 `pm_spec`이다.
 - 단계가 `stage gate`를 통과하면 `last_completed_stage`를 방금 끝난 단계로 갱신하고, `next_stage`를 다음 실행 단계로 갱신한다. 생성 또는 갱신된 파일은 `artifacts`에 기록하고 `updated_at`을 현재 시각으로 갱신한다.
+- `context_load`가 끝나면 `next_stage`를 `briefs_created`로 설정한다.
+- 실행 위치나 `mode`처럼 초기 파일 생성에 필요한 값이 없으면 `current_stage=initialized`, `next_stage=initialized`를 유지하고 사용자에게 한 번에 한 가지씩 묻는다.
+- 초기 파일 생성과 `context_load`가 끝나면 `briefs/pm.md`를 생성하고 `next_stage=pm_spec`으로 설정한다.
+- `briefs_created`가 끝나면 `next_stage`를 `pm_spec`으로 설정한다.
+- `pm_spec`에서 PM 인터뷰 질문이 필요하면 `current_stage=pm_spec`, `next_stage=pm_spec`를 유지한다. `auto_split`이면 PM이 작성한 질문을 Root orchestrator가 그대로 전달하고, 답변을 PM에게 돌려준다.
+- PM이 `00-pm-interview.md`와 `01-pm-spec.md`를 작성하고 `stage gate`가 통과하면 `last_completed_stage=pm_spec`, `next_stage=expert_gateway_spec`으로 설정한다.
 - 명세 Domain Expert Gateway가 `Approved`면 `last_decision`에 결정을 기록하고 `next_stage`를 `architect_design`으로 설정한다.
 - 명세 Domain Expert Gateway가 `Revise`면 `gateway_retry_count.spec`을 1 증가시키고 `next_stage`를 `pm_spec`으로 되돌린다.
 - 설계 Domain Expert Gateway가 `Approved`면 `last_decision`에 결정을 기록하고 `next_stage`를 `work_plan`으로 설정한다.
@@ -140,8 +152,18 @@ Root orchestrator는 각 단계 시작 전에 다음 역할의 `briefs/<role>.md
 
 각 산출물은 다음 최소 요건을 만족해야 다음 단계의 입력으로 사용할 수 있다.
 
+실행 메타정보 `00-run-setup.md`:
+
+- `run-id`
+- 실행 위치와 `mode`
+- 실행 디렉터리
+- `execution_mode`
+- 생성한 초기 파일 목록
+- 프로젝트 의미/목표/요구사항은 PM 인터뷰에서 다룬다는 명시
+
 PM 명세 `01-pm-spec.md`:
 
+- PM 인터뷰 요약 또는 `00-pm-interview.md` 참조
 - 상세 사용자 시나리오
   - 페르소나 또는 주요 사용자
   - 시작 조건과 사용 맥락
@@ -156,6 +178,8 @@ PM 명세 `01-pm-spec.md`:
 - 제외 범위 또는 비목표
 - 목표와 성공 지표
 - 데이터 명세
+  - 데이터 소스별 역할
+  - `schema_reference` 데이터의 모델 흐름 직접 연결 여부
 - AI 기능 고려사항 또는 해당 없음 명시
 - 열린 질문
 - 가정 ID 참조
@@ -170,6 +194,10 @@ Domain Expert Gateway 산출물 `02/04/08-expert-gateway-*.md`:
 
 아키텍처 설계 `03-architect-design.md`:
 
+- 구조 다이어그램
+  - Mermaid 데이터 흐름도
+  - Mermaid 실행 모드 또는 제어 흐름도
+- PM 명세의 데이터 소스 역할 반영
 - 컴포넌트와 책임
 - 데이터/모델/제어 흐름
 - 기술 스택 후보와 결정 또는 기존 스택 유지 사유

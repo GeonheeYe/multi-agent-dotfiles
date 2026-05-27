@@ -10,8 +10,10 @@
 <선택한 저장 위치>/docs/agent-team/<run-id>/
 ├── run-state.json                # `status`, `current_stage`, `next_stage` 등을 기록하는 실행 상태 파일, 최종 산출물이 아님
 ├── 00-context.md                 # 로드한 컨텍스트 또는 컨텍스트 없음/실패 기록
+├── 00-run-setup.md               # Root orchestrator가 기록한 실행 메타정보
+├── 00-pm-interview.md            # PM이 사용자와 정리한 인터뷰 노트
 ├── assumptions.md                # 가정 목록
-├── briefs/                       # 생성된 역할 작업 지시서, 최종 산출물이 아님
+├── briefs/                       # 역할 작업 지시서, 최종 산출물이 아님
 │   ├── pm.md
 │   ├── domain-expert.md
 │   ├── architect.md
@@ -28,25 +30,36 @@
 └── 09-final-report.md
 ```
 
-`briefs/<role>.md` 파일은 역할 프롬프트(`references/roles/<role>.md`)와 함께 역할 실행 입력으로 전달된다. Root orchestrator가 단계 전환 전에 생성 또는 갱신하며, `single_session`에서도 같은 입력 경계를 기록하기 위해 생성한다. 사용자에게 보여주는 최종 산출물은 아니다.
+`00-run-setup.md`는 Root orchestrator가 작성하는 실행 메타정보다. `run-id`, 실행 위치, `mode`, 실행 디렉터리, `execution_mode`, 생성한 초기 파일 목록만 기록한다. 프로젝트 주제, 목표, 주요 사용자, 해결하려는 일/결정, 입력 데이터, 기대 출력, 성공 기준은 기록하지 않고 PM 인터뷰에서 다룬다.
+
+`00-pm-interview.md`는 PM이 사용자에게 한 질문, 사용자 답변, 확정 요구사항, 열린 질문을 누적하는 작업 노트다. 이미 인터뷰 질문과 답변이 진행된 상태라면 그 내용을 인터뷰 기록으로 정리한다. 구현 흐름의 기술 방향/플랫폼 제약/선호도 PM 인터뷰에서 확인한다. 예: NeMo Microservices, NeMo Agent Toolkit, 특정 클라우드, 로컬 실행, 특정 프레임워크.
+
+`briefs/<role>.md` 파일은 역할 프롬프트(`references/roles/<role>.md`)와 함께 역할 실행 입력으로 전달된다. Root orchestrator가 단계 전환 전에 생성 또는 갱신하며, `single_session`에서도 같은 입력 경계를 기록하기 위해 생성한다. 사용자에게 보여주는 최종 산출물은 아니다. 사람에게 필요한 작업 지시는 상단에 두고, 실행 추적용 메타데이터는 하단 `System Handoff`에 둔다.
 
 ## briefs/<role>.md 작업 지시서 입력
 
-`briefs/<role>.md` 안의 `handoff` 섹션 형식은 `references/handoff-template.md`를 따른다.
+`briefs/<role>.md` 형식은 `references/handoff-template.md`를 따른다.
 
 각 역할 작업 지시서에는 아래를 포함한다. 값이 없으면 “없음”, “아직 생성 전”, “사용자 입력 필요” 중 하나로 표시한다:
 
 - 사용자 요청
 - 저장소/프로젝트 위치
 - 로드한 컨텍스트 또는 컨텍스트 실패 정보
+- `00-run-setup.md` 경로
+- `00-pm-interview.md` 경로와 현재 인터뷰 상태
+- 기술 방향/플랫폼 제약/선호 요약
 - 공통 역할 프롬프트 경로
 - 사용자 요청, 컨텍스트, 프로젝트 문서에서 확인한 프로젝트별 요구사항
 - 현재 입력 산출물 경로. 예: Architect는 `01-pm-spec.md`와 `02-expert-gateway-spec.md`를 입력으로 받는다.
 - 작성할 출력 산출물 경로. 예: Developer는 `06-developer-implementation.md`만 작성한다.
 - `assumptions.md` 경로
-- `run-state.json` 경로와 `current_stage`
+- `run-state.json` 경로와 `current_stage`는 하단 `System Handoff`에 기록
 - 현재 역할 입력에 영향을 주는 Domain Expert Gateway 결과와 필수 수정사항. 직전 단계나 현재 반복에 관련 Domain Expert Gateway 결과가 없으면 `해당 없음`으로 표시한다.
 - `stage gate` 결과 또는 실패 항목. 실패 항목은 누락된 파일/섹션, 기대값, 실제 확인값을 포함한다.
+
+`briefs/pm.md`는 초기 파일 생성과 컨텍스트 로드가 끝나면 생성한다. PM brief에는 “PM은 먼저 사용자 인터뷰를 수행해야 한다”는 지시를 명시한다. PM은 사용자 인터뷰와 `01-pm-spec.md` 작성을 담당한다. `auto_split`에서 PM이 사용자에게 직접 질문할 수 없으면 PM이 작성한 질문을 Root orchestrator가 그대로 전달한다. 이미 인터뷰 질문과 답변이 진행된 상태라면 PM은 이를 인터뷰 기록으로 정리하고 명세를 작성한다.
+
+`briefs/architect.md`는 Architect가 `03-architect-design.md`에 Mermaid 구조 다이어그램을 포함하도록 지시한다. 최소 Mermaid 다이어그램은 데이터 흐름도와 실행 모드 또는 제어 흐름도다. Architect는 PM 명세의 데이터 소스 역할을 변경하지 않는다. `schema_reference` 데이터는 profiling, canonical mapping, adapter 설계 참고까지만 연결하고 모델 학습/평가/추론 흐름에 직접 연결하지 않는다.
 
 ## assumptions.md 가정 목록 관리
 
