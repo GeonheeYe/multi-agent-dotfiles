@@ -3,12 +3,18 @@
     "chrome-devtools": {
       "type": "stdio",
       "command": "npx",
-      "args": ["chrome-devtools-mcp", "--browserUrl", "http://127.0.0.1:9222"]
+      "args": [
+        "chrome-devtools-mcp",
+        "--browserUrl",
+        "http://127.0.0.1:9222"
+      ]
     },
     "dooray": {
       "type": "stdio",
       "command": "node",
-      "args": ["${DOORAY_MCP_PATH}"],
+      "args": [
+        "${DOORAY_MCP_PATH}"
+      ],
       "env": {
         "DOORAY_API_TOKEN": "${DOORAY_API_TOKEN}",
         "DOORAY_TENANT_URL": "${DOORAY_TENANT_URL}"
@@ -17,7 +23,10 @@
     "notion-work": {
       "type": "stdio",
       "command": "npx",
-      "args": ["-y", "@notionhq/notion-mcp-server"],
+      "args": [
+        "-y",
+        "@notionhq/notion-mcp-server"
+      ],
       "env": {
         "NOTION_TOKEN": "${NOTION_WORK_API_TOKEN}"
       }
@@ -25,7 +34,10 @@
     "notion-personal": {
       "type": "stdio",
       "command": "npx",
-      "args": ["-y", "@notionhq/notion-mcp-server"],
+      "args": [
+        "-y",
+        "@notionhq/notion-mcp-server"
+      ],
       "env": {
         "NOTION_TOKEN": "${NOTION_PERSONAL_API_TOKEN}"
       }

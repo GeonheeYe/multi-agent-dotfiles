@@ -1,11 +1,11 @@
 ---
 name: ai-daily-news
-description: HN/GN + 글로벌/중국 공식 AI 소스를 수집해 Dooray DM으로 5줄 한국어 요약을 발송하고 로그를 저장한다. 퀴즈는 `ai-daily-news quiz` 요청 시에만 진행한다.
+description: HN/GN + 글로벌/중국 공식 AI 소스를 수집해 Discord #브리핑으로 5줄 한국어 요약을 발송하고 로그를 저장한다. 퀴즈는 `ai-daily-news quiz` 요청 시에만 진행한다.
 ---
 
 # /ai-daily-news
 
-매일 AI 뉴스를 수집해 Dooray DM으로 보내고 로그를 남긴다.
+매일 AI 뉴스를 수집해 Discord #브리핑으로 보내고 로그를 남긴다.
 
 ## 트리거
 
@@ -16,7 +16,7 @@ description: HN/GN + 글로벌/중국 공식 AI 소스를 수집해 Dooray DM으
 
 ### 1) Digest 모드 (기본)
 
-요약 + DM + 로그만 수행한다. (퀴즈 자동 시작 금지)
+요약 + Discord 전송 + 로그만 수행한다. (퀴즈 자동 시작 금지)
 
 ### 2) Quiz 모드 (`quiz` 인자)
 
@@ -59,7 +59,7 @@ description: HN/GN + 글로벌/중국 공식 AI 소스를 수집해 Dooray DM으
 2. 제외 키워드(채용/광고/비AI 일반 개발성 글 등)면 제거
 3. 애매한 항목은 제거
 
-## DM 작성 규칙
+## 메시지 작성 규칙
 
 항목당 아래 형태를 반드시 지킨다:
 
@@ -79,48 +79,18 @@ description: HN/GN + 글로벌/중국 공식 AI 소스를 수집해 Dooray DM으
 
 ## 전달
 
-**항상** Discord와 Dooray 양쪽에 전달한다. 하나가 실패해도 나머지는 계속 진행한다.
+**Discord #브리핑 채널에만** 전달한다. Dooray DM은 사용하지 않는다.
 
-### 1) Discord #브리핑 채널 전송 (우선)
+### Discord #브리핑 채널 전송
 
-`terminal` 도구로 아래 Python 스크립트를 실행해 Discord 채널 `1502682632230801528`에 직접 전송한다.
-뉴스 본문이 2000자를 초과하면 1900자씩 분할해 순서대로 전송한다.
+자동 실행 cron에서는 job `deliver`를 `discord:#daily-briefing`으로 설정하고, 최종 응답에 뉴스 본문만 작성한다. 즉 cron 실행 중에는 `send_message`를 직접 호출하지 않는다.
 
-```python
-import urllib.request, json, os
+- target/deliver: `discord:#daily-briefing`
+- channel_id: `1502682632230801528` (`#브리핑`)
+- 뉴스 본문이 2000자를 초과하면 1900자 이하 파트로 나눠 최종 응답에 포함한다.
+- Discord Bot API를 `terminal`에서 직접 호출하지 않는다. 현재 이 채널은 직접 Bot API 호출 시 403이 날 수 있다.
 
-token = ''
-env_path = os.path.expanduser('~/.hermes/.env')
-with open(env_path) as f:
-    for line in f:
-        line = line.strip()
-        if line.startswith('DISCORD_BOT_TOKEN='):
-            token = line.split('=', 1)[1].strip().strip('"').strip("'")
-
-channel_id = '1502682632230801528'
-content = """여기에 뉴스 본문"""  # 실제 실행 시 뉴스 본문으로 대체
-
-chunks = [content[i:i+1900] for i in range(0, len(content), 1900)]
-for chunk in chunks:
-    data = json.dumps({'content': chunk}).encode('utf-8')
-    req = urllib.request.Request(
-        f'https://discord.com/api/v10/channels/{channel_id}/messages',
-        data=data,
-        headers={'Authorization': f'Bot {token}', 'Content-Type': 'application/json'},
-        method='POST'
-    )
-    try:
-        with urllib.request.urlopen(req, timeout=10) as resp:
-            print(f'Discord sent: {resp.status}')
-    except Exception as e:
-        print(f'Discord error: {e}')
-```
-
-### 2) Dooray DM 전송 (보조)
-
-1. `mcp__dooray__get-my-member-info`로 본인 ID 조회
-2. `mcp__dooray__send-messenger-direct-message`로 전송
-3. 실패 시 경고를 출력하고 로그 저장은 계속 진행
+수동 실행에서 이미 Hermes 메시징 도구가 주입된 대화형 세션이라면 `send_message(target="discord:#daily-briefing")`로 전송해도 된다.
 
 ## 로그 저장
 
