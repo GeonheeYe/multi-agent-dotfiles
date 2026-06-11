@@ -29,6 +29,11 @@ Root orchestrator가 현재 대화의 PM 단계에 제공한다. PM 인터뷰를
   - `preferred`: 사용자가 “선호”, “쓰면 좋겠다”, “가능하면”처럼 방향을 제시했지만 필수라고 하지 않은 기술.
   - `candidate`: 사용자가 “후보”, “검토”, “고려”처럼 채택 전 검토 대상으로 말한 기술.
 - 사용자가 이미 기술을 언급했다면 다시 확인 질문하지 않고 위 세 단계 중 하나로 분류해 PM 명세에 기록한다. `required` 기술은 PM 단계에서 구현 제약으로 확정하고, Architect가 임의로 후보로 낮추지 못하게 명시한다.
+- 사용자가 `NeMo Microservices`, `NVIDIA NeMo Microservices`, `nemo microservices`를 “사용”, “최대한 사용”, “필수”, “실제 runtime 연결”, “microservices로 만들기”처럼 요구하면 PM은 이를 `required` 기술로 기록한다. 이때 단순 local adapter, fallback, config template, failure artifact만으로 수용 기준을 충족한다고 쓰지 않는다. PM 명세에는 실제 NeMo Microservices runtime 연결과 service별 smoke 검증이 PoC 완료 기준인지 확인하고, 사용자가 동의하면 `NeMo Microservices actual runtime`으로 표기한다.
+- `NeMo Microservices actual runtime`이 required로 확정되면 PM 명세의 성공 기준에는 최소한 Data Store, Entity Store, Evaluator 또는 PM/Architect가 공식 문서로 식별한 동등 필수 서비스의 health/API smoke 결과 artifact가 포함되어야 한다. local 학습/평가 artifact 성공과 NeMo service smoke 성공은 분리해서 기록하고, NeMo smoke 실패를 local artifact 성공으로 대체하지 않는다.
+- `NeMo Microservices actual runtime`이 required이고 합성 데이터 생성이 범위에 있으면 PM 명세는 `NeMo Data Designer primary`를 기본 경로로 둔다. local deterministic generator는 Data Designer가 RF/도메인 schema의 일부 제약을 직접 표현하지 못할 때의 보조 검증 또는 보정 경로일 뿐이며, Data Designer job/config/status/result reference 없이 합성 데이터 생성 성공으로 쓰지 않는다.
+- `NeMo Microservices actual runtime`이 required이고 평가가 범위에 있으면 PM 명세는 `NeMo Evaluator primary`를 기본 평가 runtime으로 둔다. `MAE/RMSE/F1` 같은 도메인 숫자 metric을 NeMo Evaluator custom evaluation/custom metric으로 실행할 수 있는지 확인하고, 공식 지원이나 설정이 부족하면 local metric은 보조 산출물로 계산하되 Evaluator job/config/status/result reference와 Data Store/Entity Store 연결을 필수로 남긴다.
+- 위 경우 PM 명세의 NeMo service artifact에는 Data Designer, Data Store, Entity Store, Evaluator의 reference를 분리한다. 예: `nemo_datadesigner_refs.json`, `nemo_datastore_refs.json`, `nemo_entity_refs.json`, `nemo_evaluator_jobs.json`, `nemo_evaluator_results.json`.
 - 한 번에 한 가지씩 질문한다. 여러 질문을 동시에 던지지 않는다.
 - 질문은 추상 체크리스트를 한꺼번에 던지지 말고 아래 `PM 인터뷰 질문 진행 순서`를 따라 한 단계씩 쪼개서 묻는다. 질문마다 필요한 맥락은 한 문장 이내로 설명하고, 사용자가 바로 답할 수 있게 후보 답변이나 권장 기본값을 함께 제시할 수 있다.
 - PM 인터뷰는 현재 대화에서 직접 진행한다. 인터뷰 질문을 PM `sub-agent`에게 위임하지 않는다.
@@ -106,6 +111,8 @@ PM은 아래 순서를 기본으로 사용한다. 이미 사용자가 답한 내
 6. 기술 방향과 runtime/config
    - 사용자가 언급한 기술을 `required`, `preferred`, `candidate` 중 하나로 분류한다. 필수인지 애매하면 “필수 구현 제약인가요, 검토 후보인가요?”를 한 가지 질문으로 확인한다.
    - `required` 기술이 플랫폼이나 microservices 묶음이면 PM 단계에서 하위 서비스명 확정까지 강요하지 않되, Architect가 서비스/모듈별로 쪼개 설계해야 한다고 명세에 남긴다.
+   - `NeMo Microservices actual runtime`이 required이고 데이터 생성/평가가 포함되면 `NeMo Data Designer primary`, `NeMo Evaluator primary`를 기본 요구로 기록한다. local generator/local metric은 보조 경로이며 Data Designer/Evaluator 실제 job/reference를 대체하지 못한다고 명시한다.
+   - `NeMo Microservices actual runtime`이 required이면 PM은 기존 NeMo 배포 endpoint/namespace/project/env가 있는지 또는 로컬 Docker Compose/Helm 배포까지 이번 범위에 포함할지 확인한다. secret 값은 묻거나 문서에 저장하지 않고 `NGC_CLI_API_KEY`, `NVIDIA_API_KEY`, 배포별 `NEMO_*` env var 이름만 남긴다.
    - 실제 runtime 연결 검증이 필요하면 기존 설정 파일이나 배포 문서가 있는지 먼저 묻고, 없으면 로컬 Docker Compose 같은 자체 구성을 진행할지 묻는다.
    - secret은 문서에 값으로 남기지 않고 env var 이름만 남긴다. endpoint/base URL은 사용자가 직접 모두 채우게 하지 말고 배포 결과나 기존 설정에서 산출하는 방향으로 기록한다.
    - 모델과 런타임 실행값은 설정으로 바꿀 항목을 분리해 확인한다. 예: 추론 모델명, vLLM 모델/이미지/포트, NIM base URL, max tokens, temperature, seed, Customizer dataset/config/output model reference.

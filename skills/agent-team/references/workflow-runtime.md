@@ -248,6 +248,9 @@ PM 명세 `01-pm-spec.md`:
   - 현재 구현 범위이면 운영 기록, 라벨 또는 실제 결과, 사람 승인, 저장 데이터, 재평가/개선 후보 트리거
   - 별도 후속 워크플로우이면 현재 구현 범위의 제외 항목과 후속 워크플로우가 읽을 예측 결과 저장 형식/필드 목록 후보
   - required 외부 플랫폼이나 microservices 묶음이 있으면 PM 명세가 필수 기술 여부, 실제 runtime 연결 검증 필요 여부, 기존 설정/배포 문서 확인 여부, secret을 env var로만 다루는 원칙, endpoint/base URL을 배포 결과나 기존 설정에서 산출한다는 원칙을 포함함
+  - `NeMo Microservices actual runtime`이 required이면 PM 명세가 local artifact 성공과 NeMo service smoke 성공을 분리하고, Data Store/Entity Store/Evaluator 또는 공식 문서로 식별한 동등 필수 서비스의 health/API smoke artifact를 PoC 수용 기준에 포함함. 단순 adapter/fallback/config template만으로 성공 처리하지 않는다고 명시함
+  - `NeMo Microservices actual runtime`이 required이고 합성 데이터 생성이 범위에 있으면 PM 명세가 `NeMo Data Designer primary`를 기본 경로로 기록하고, local generator는 Data Designer job/config/status/result reference를 대체하지 못하는 보조 경로라고 명시함
+  - `NeMo Microservices actual runtime`이 required이고 평가가 범위에 있으면 PM 명세가 `NeMo Evaluator primary`를 기본 평가 runtime으로 기록하고, local metric은 Evaluator custom evaluation/custom metric 불가 시의 보조 artifact이며 Evaluator job/result reference를 대체하지 못한다고 명시함
 - 열린 질문
 - 가정 ID 참조
 - 추상 용어 구체화: “입력”, “피드백”, “루프”, “계약”, “후속”, “사용” 같은 표현은 실제 저장 데이터/필드, 산출물, 소비 단계, 금지 용도를 함께 설명해야 한다.
@@ -273,6 +276,7 @@ Domain Expert Gateway 산출물 `02/04/08-expert-gateway-*.md`:
 - 구조 다이어그램
   - Mermaid 데이터 흐름도
   - Mermaid 실행 모드 또는 제어 흐름도
+  - Mermaid 블록은 Markdown 렌더러 호환성을 위해 세 개 백틱 code fence와 `mermaid` info string으로 작성해야 한다. `~~~mermaid` tilde fence는 stage gate를 통과시키지 않는다.
   - 운영 데이터 기반 지속 개선 루프가 실서비스 운영 단계 또는 별도 후속 워크플로우이면 Mermaid 실서비스 지속개선 워크플로우 다이어그램
 - 사용자가 기준 실행 경로를 제공했다면 기준 실행의 설계 산출물과 구조·의미·표현 차이를 자체 점검한 기록. 단, 기준 실행 내용을 현재 요구사항으로 무단 복사하지 않고 현재 PM 명세와 충돌하는 부분은 현재 PM 명세를 우선한다.
 - PM 명세의 데이터 소스 역할 반영
@@ -345,6 +349,7 @@ Task Plan `05-work-plan.md`:
   - 값을 제공받을 수 없으면 실제 runtime 연동 성공을 PoC 수용 기준에서 제외하고, config schema, service adapter, 실패 artifact, 미검증 residual risk를 구현하는 작업을 포함한다.
 - `required` 기술이 여러 서비스/모듈로 구성된 플랫폼이면 서비스/모듈별 구현 작업과 검증 방법
   - Task Plan은 공식 서비스/모듈별 작업을 나눠야 한다. 일반 기능명만 적힌 작업은 Developer에게 넘기기 전에 Architect 단계로 되돌린다.
+  - NeMo actual runtime이 required이면 Data Designer 기반 데이터 생성과 Evaluator 기반 평가를 primary 작업으로 나눠야 한다. local generator/local metric만 있고 Data Designer/Evaluator job/result reference 작업이 없으면 Developer에게 넘기기 전에 Architect 단계로 되돌린다.
 - 사용자 실행 mode가 여러 개면 mode별 목적, 입력, 출력 artifact, 필요한 config/env, 성공 기준, 실패 artifact, 검증 명령
 - 모델명과 runtime 실행값을 바꿔야 하는 프로젝트이면 config override 작업. 최소 검증 항목은 model/deployment name, endpoint/base URL, port, max tokens, temperature, seed, 필요한 dataset/config/model reference가 config 또는 env override로 실제 payload/wrapper에 반영되는지다.
 - 운영 데이터 기반 지속 개선 루프가 현재 구현 범위인 경우 예측·운영 기록 수집, 정답·결과 후보 저장, 오프라인 평가, 개선 후보 트리거, 사람 승인 경계 작업. PoC에서 지속개선을 구현만 하는 경우 PoC 데모용 결과 후보/VOC 샘플 연결, 데모 재평가/개선 리포트, 승인 기반 후보 실험 경계 검증 작업과 실서비스 개선 방식 설명. 별도 후속 워크플로우인 경우 현재 범위의 예측 결과 저장 형식/로그 저장 작업

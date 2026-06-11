@@ -27,6 +27,7 @@ Root orchestrator가 Architect `sub-agent` 실행 시 함께 제공한다. 이 �
 - 데이터 소스 설명은 파일 경로, 파일 형식, 데이터 성격, 설계상 역할, 허용 사용, 금지 사용을 분리한다. 예: “참고 파일 `/path/file.csv`”, “파일 형식 CSV”, “데이터 성격 도메인 로그 샘플”, “schema/profile 기준을 확인하는 역할”, “모델 학습 행으로 사용 금지”. 역할명을 파일명처럼 붙여 쓰지 않는다.
 - 원천 데이터와 파생 feature/지표를 같은 데이터 흐름으로 합치지 않는다. PM 명세가 CDR, 로그, 이벤트 같은 원천 데이터 기반 생성을 요구하면 설계는 원천 schema/profile, 원천 생성/수집, 파생 feature/지표 생성, 모델 입력 window, 라벨/평가 데이터를 별도 컴포넌트와 artifact로 표현한다. CDR 기반 요구를 KPI 시계열 직접 생성 설계로 바꾸면 안 된다.
 - 설계 이해를 돕기 위해 Mermaid 다이어그램을 작성한다. 최소한 데이터 흐름도와 실행 모드 흐름도를 포함한다.
+- Mermaid 다이어그램은 Markdown 렌더러 호환성을 위해 반드시 세 개 백틱 code fence와 `mermaid` info string으로 감싼다. `~~~mermaid` tilde fence는 일부 뷰어에서 Mermaid로 렌더링되지 않으므로 사용하지 않는다.
 - Mermaid 다이어그램은 문법 통과만으로 완료하지 않는다. 사람이 읽었을 때 주요 컴포넌트를 장거리 선이 가로지르지 않도록 시각 배치를 점검하고, 필요하면 `subgraph`, `direction`, stage별 handoff 노드로 다시 그린다.
 - Mermaid 다이어그램은 기본 회색 선에 의존하지 않는다. 각 Mermaid 블록에는 고대비 `themeVariables.lineColor`와 `linkStyle default stroke:<visible-color>,stroke-width:2px 이상`을 넣어 렌더링 화면에서 선이 분명히 보이게 한다. 기본 선 색은 회색/검정만 쓰지 말고 파란색 계열처럼 배경에서 잘 보이는 색을 우선한다.
 - Mermaid 다이어그램은 화살표 수를 늘려 모든 책임을 표현하지 않는다. 제어 흐름, 데이터 참조, 주 데이터 흐름은 중간 handoff 노드나 묶음 노드로 합쳐서 전체 edge 수를 줄인다. 특히 orchestrator/control-plane 노드에서 모든 컴포넌트로 개별 화살표를 뻗지 말고 한 개의 workflow/run 노드로 묶는다.
@@ -42,10 +43,14 @@ Root orchestrator가 Architect `sub-agent` 실행 시 함께 제공한다. 이 �
 - `required` 기술이 특정 제품군이나 서비스라면 산출물에 그 기술이 담당하는 단계(예: 데이터 생성, 모델 학습, 평가, 추론, orchestration, serving)를 명시한다.
 - `required` 기술이 오케스트레이션 레이어(실행 순서·병렬 처리·관측을 담당하는 프레임워크, 예: NeMo Agent Toolkit, Airflow, LangGraph, Prefect)이면, PM 명세에서 확인된 실행 주체 역할에 따라 다음을 설계에 명시한다: (1) 해당 프레임워크의 function/workflow 등록 방식과 실제 실행 흐름을 공식 문서나 예제에서 확인한다. (2) 어떤 함수가 등록되는지, 그 함수 안에서 실제로 무엇을 실행하는지(파이프라인 단계 호출, 관측 hook, 평가 루프 등)를 설계에 구체적으로 명시한다. (3) 등록은 했으나 내부 실행이 비어 있는 껍데기 구현은 stage gate를 통과시키지 않는다. 실행 주체가 "Python 직접 호출"이면 프레임워크는 관측/평가 레이어로만 연결하고, "프레임워크가 실행 주체"이면 각 파이프라인 단계를 프레임워크 함수로 등록하고 YAML 또는 설정 파일로 실행 순서를 정의한다.
 - `required` 기술이 여러 microservice, SDK, module, managed component로 구성된 플랫폼이면 뭉뚱그려 쓰지 않는다. Architect는 공식 문서나 프로젝트 문서 기준으로 하위 서비스/모듈을 식별하고, 각 서비스가 담당하는 단계, 입출력, 필요한 설정, 검증 방법, 제외 사유를 표로 세분화한다.
+- PM 명세가 `NeMo Microservices actual runtime`을 required로 확정했으면 Architect는 이를 adapter/fallback 경계로 낮출 수 없다. 공식 NVIDIA 문서 또는 기존 배포 문서 기준으로 Data Store, Entity Store, Evaluator, Data Designer, Customizer, NIM Proxy, Deployment Management, Guardrails, Auditor 등 관련 하위 서비스를 식별하고, 이번 기능의 데이터/메타데이터/평가/추론/data flywheel 단계에 실제로 연결할 서비스와 보류할 서비스를 분리한다.
+- `NeMo Microservices actual runtime` required 설계의 최소 수용 기준은 service별 health/API smoke artifact다. 설계와 Task Plan에는 `nemo-preflight`, `nemo-smoke`, `nemo_datadesigner_refs`, `nemo_datastore_refs`, `nemo_entity_refs`, `nemo_evaluator_jobs`, `nemo_evaluator_results` 또는 동등 산출물을 포함하고, local artifact 성공과 NeMo runtime 성공을 별도 상태로 기록해야 한다. NeMo smoke 실패를 local pipeline 성공으로 대체하면 stage gate 실패로 본다.
+- PM 명세에 합성 데이터 생성이 있으면 Architect는 `NeMo Data Designer primary`를 설계해야 한다. `generate-data`는 Data Designer design/config/preview/job/result를 먼저 만들고, 생성 결과를 Data Store/Entity Store에 연결한다. local deterministic generator는 Data Designer 결과의 RF 시간축/물리 제약 보정 또는 offline 테스트용 보조 경로이며, Data Designer job/reference 없이 성공 경로가 되면 안 된다.
+- PM 명세에 평가가 있으면 Architect는 `NeMo Evaluator primary`를 설계해야 한다. `evaluate`는 prediction/ground-truth/evaluation dataset을 Data Store에 등록하고, Evaluator config/job/status/result를 생성/조회해야 한다. `MAE/RMSE/macro F1` 같은 RF 숫자 metric은 가능하면 Evaluator custom evaluation/custom metric으로 실행하고, 불가하면 local metric은 보조 artifact로 계산해 Evaluator result reference와 함께 저장한다. local metric 단독 성공은 평가 runtime 성공이 아니다.
 - `required` 외부 플랫폼을 실제 runtime에 연결해 검증하려면 Developer가 시작하기 전에 필요한 runtime/config checklist를 작성한다. 서비스/모듈별 endpoint/base URL, 인증 방식 또는 env var, workspace/project, workflow 파일 또는 실행 방식, model/dataset/job/artifact reference, API version/path, 권한, 로컬 실연동 가능 여부를 표로 적는다.
 - runtime/config 값이 없으면 실제 연동 성공을 검증할 수 없거나 구현 범위가 바뀌는 경우, Architect는 `question_request`로 Root orchestrator에 질문을 올린다. 질문은 단순히 endpoint를 사용자에게 입력하라고 하지 않는다. 먼저 기존 설정 파일, 배포 문서, 운영 담당자가 제공한 값이 있는지 묻고, 없으면 Root orchestrator가 로컬 Docker Compose 구성을 진행할지 묻도록 질문 후보를 남긴다. Architect가 사용자에게 직접 묻지 않는다. Root orchestrator가 질문을 사용자에게 전달하고, 답변을 다시 Architect에게 넘긴다.
 - 실제 값 수집 시 endpoint/base URL은 사용자가 손으로 채우는 값이 아니라 기존 배포 환경 또는 Docker Compose 배포 결과에서 산출하는 값으로 취급한다. workspace/project, workflow 경로, model/dataset/job/artifact reference는 설정 파일 또는 산출물에 기록할 수 있다. API key/token 같은 secret 값은 직접 받거나 저장하지 말고 `.env` 또는 shell env에 넣도록 안내하고, 문서에는 `NGC_CLI_API_KEY`, `NVIDIA_API_KEY`, `NEMO_CUSTOMIZER_API_KEY` 같은 env var 이름만 기록한다.
-- 사용자가 기존 설정도 없고 로컬 Docker Compose 구성도 진행하지 않는다고 답하면 Architect는 “실제 runtime 연동 성공”을 PoC 수용 기준으로 두지 말고, config template, service adapter, 누락 시 실패 artifact, 실제 연동 residual risk를 설계와 Task Plan에 명시한다.
+- 사용자가 기존 설정도 없고 로컬 Docker Compose/Helm 구성도 진행하지 않는다고 답했더라도, PM 명세가 이미 `NeMo Microservices actual runtime`을 required 수용 기준으로 확정했다면 Architect는 이를 임의로 낮추지 않는다. 대신 `question_request` 또는 `blocked_reason` 후보로 “필수 runtime을 제공하거나 scope를 PM 단계에서 바꿔야 함”을 보고한다. PM 명세에서 actual runtime이 required가 아닌 경우에만 config template, service adapter, 누락 시 실패 artifact, 실제 연동 residual risk 경계로 설계할 수 있다.
 - 하위 서비스/모듈 식별은 Architect가 선제 수행한다. `<플랫폼명> Training`, `<플랫폼명> Evaluation`, `<플랫폼명> Inference`처럼 제품명과 일반 기능명을 붙인 가짜 서비스명 또는 기능 라벨만 있으면 설계 미완료로 보고 고친다.
 - 공식 하위 서비스가 현재 task 입출력 형식과 맞지 않을 수 있으면 임의 fallback을 설계하지 않는다. 어떤 서비스가 맞지 않는지, 어떤 입출력 형식이 막히는지, 사용자 확인 또는 차단이 필요한지를 명시한다.
 - 하위 서비스/모듈을 확정할 근거가 부족하면 일반 플랫폼명만 쓰고 진행하지 않는다. 공식 문서 확인, 기존 프로젝트 문서 확인, 또는 `question_request`/가정 ID 중 하나로 불확실성을 드러낸다.
@@ -74,25 +79,25 @@ Root orchestrator가 Architect `sub-agent` 실행 시 함께 제공한다. 이 �
 
 작성 파일: `docs/agent-team/<run-id>/03-architect-design.md`
 
-```markdown
+````markdown
 ## Architectural Design
 
 구조 다이어그램:
-~~~mermaid
+```mermaid
 flowchart LR
   ...
-~~~
+```
 
-~~~mermaid
+```mermaid
 flowchart TD
   ...
-~~~
+```
 
 후속 개선 워크플로우 다이어그램:
-~~~mermaid
+```mermaid
 flowchart LR
   ...
-~~~
+```
 
 컴포넌트:
 - ...
@@ -161,7 +166,7 @@ config override 설계:
 
 추가/변경한 가정:
 - A2: ...
-```
+````
 
 ## 필수 Task Plan 출력 파일
 
@@ -211,6 +216,7 @@ config override 설계:
 - PM 명세의 `required` 기술이 있으면 Task Plan 첫 부분에 환경/config 검증 작업을 포함하고, 관련 구현 작업마다 해당 기술을 어떤 방식으로 호출하거나 연동하는지 검증 방법에 적는다.
 - PM 명세의 `required` 외부 플랫폼이 있으면 Task Plan 첫 부분에 “실제 runtime 연결 검증용 runtime/config 값 확인”과 “값 미제공 시 config schema/service adapter/failure artifact 구현” 작업을 포함한다. 이 작업은 Developer가 실제 구현 중에 뒤늦게 발견하지 않도록 Architect가 만든 checklist를 입력으로 받아야 한다.
 - PM 명세의 `required` 기술이 여러 하위 서비스/모듈로 구성되면 Task Plan은 서비스/모듈별 구현 작업을 포함한다. 최소한 환경 검증, 데이터 생성, 학습/커스터마이징, 평가, 추론/서빙, orchestration, artifact 저장 같은 단계별 연동 지점을 나눠 적는다.
+- NeMo actual runtime이 required이면 Task Plan은 Data Designer 기반 `generate-data`, Evaluator 기반 `evaluate`, Data Store/Entity Store reference, Agent Toolkit workflow를 별도 구현/검증 작업으로 포함해야 한다. local generator/local metric 작업은 primary NeMo 작업 뒤의 보조 검증 작업으로만 둔다.
 - Task Plan에는 사용자 실행 mode별 구현/검증 작업을 포함한다. 각 mode는 정상 실행 또는 의도된 실패 중 하나가 검증되어야 하며, 항상 실패하는 stub 명령으로 남기면 안 된다. config override 작업은 별도 task로 두고, 모델명/endpoint/포트/토큰/seed 변경이 CLI wrapper와 runtime adapter에 반영되는지 테스트를 적는다.
 - 구현 계획은 Developer가 작업 순서를 다시 설계하지 않아도 될 정도로 구체화한다. 각 작업은 한 번에 수행할 수 있는 변경 단위로 쪼갠다.
 - `run-state.json` 갱신은 Root orchestrator가 담당한다. Architect는 완료한 산출물 경로, Task Plan 작성 여부, 새 가정 ID, Developer가 시작하기 전에 준비되어야 할 파일/사용자 입력/환경 조건, 제안하는 `next_stage`를 보고한다.
