@@ -41,6 +41,9 @@
       "env": {
         "NOTION_TOKEN": "${NOTION_PERSONAL_API_TOKEN}"
       }
+    },
+    "figma": {
+      "url": "https://mcp.figma.com/mcp"
     }
   }
 }
