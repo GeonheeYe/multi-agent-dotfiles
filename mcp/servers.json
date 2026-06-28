@@ -42,8 +42,31 @@
         "NOTION_TOKEN": "${NOTION_PERSONAL_API_TOKEN}"
       }
     },
-    "figma": {
-      "url": "https://mcp.figma.com/mcp"
+    "computer-use": {
+      "type": "stdio",
+      "command": "/Users/geonhee/.codex/computer-use/Codex Computer Use.app/Contents/SharedSupport/SkyComputerUseClient.app/Contents/MacOS/SkyComputerUseClient",
+      "args": [
+        "mcp"
+      ]
+    },
+    "node_repl": {
+      "type": "stdio",
+      "command": "/Applications/Codex.app/Contents/Resources/cua_node/bin/node_repl",
+      "args": [],
+      "env": {
+        "NODE_REPL_NATIVE_PIPE_CONNECT_TIMEOUT_MS": "1000",
+        "NODE_REPL_NODE_MODULE_DIRS": "/Applications/Codex.app/Contents/Resources/cua_node/lib/node_modules",
+        "NODE_REPL_NODE_PATH": "/Applications/Codex.app/Contents/Resources/cua_node/bin/node",
+        "NODE_REPL_TRUSTED_CODE_PATHS": "/Users/geonhee/.codex",
+        "CODEX_HOME": "/Users/geonhee/.codex",
+        "NODE_REPL_TRUSTED_BROWSER_CLIENT_SHA256S": "feca4d852d7d18eab5e217b18c8c80099fe667c330e836640fd7a48f362de525",
+        "BROWSER_USE_AVAILABLE_BACKENDS": "chrome,iab",
+        "NODE_REPL_INSTRUCTIONS_USE_CASE_BROWSER": "Control the in-app browser in conjunction with the Browser Plugin.",
+        "NODE_REPL_INSTRUCTIONS_USE_CASE_CHROME": "Control the Chrome browser in conjunction with the Chrome Plugin. Prefer this method of controlling Chrome over alternatives (such as Computer Use) unless the user explicitly mentions an alternative.",
+        "BROWSER_USE_CODEX_APP_BUILD_FLAVOR": "prod",
+        "BROWSER_USE_CODEX_APP_VERSION": "26.616.32156",
+        "CODEX_CLI_PATH": "/Applications/Codex.app/Contents/Resources/codex"
+      }
     }
   }
 }
