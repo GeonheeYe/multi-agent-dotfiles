@@ -30,7 +30,7 @@ description: Use when 사용자가 $agent-team을 명시적으로 호출해 AI �
 | `handoff` | 다음 역할에 넘기는 입력 파일, 출력 파일, 제약, 관련 `last_decision`, `blocked_reason` 후보, `stage gate` 실패 정보 |
 | `briefs/<role>.md` | Root orchestrator가 역할별 실행에 전달하는 작업 지시서. PM 인터뷰 단계에서는 현재 대화에서 참조하고, 이후 역할은 `sub-agent`에 전달할 수 있다. |
 | `briefs/domain-expert-01-spec.md`, `briefs/domain-expert-02-design.md`, `briefs/domain-expert-03-final.md` | Domain Expert Gateway 1/2/3 실행 직전의 작업 지시서 스냅샷. `briefs/domain-expert.md`는 최신 실행용으로 갱신되지만, 이 스냅샷은 어떤 Gateway가 어떤 지시를 받고 실행됐는지 추적하기 위해 별도로 보존한다. |
-| 산출물 | `00-pm-interview.md`, `01-pm-spec.md`부터 `09-final-report.md`까지의 결과 파일 |
+| 산출물 | top-level lifecycle 산출물은 `00-*.md`부터 `09-final-report.md`까지의 고정 파일이다. Reviewer 이후 재작업, retry, 보정 문서는 이 번호를 이어 붙이지 않고 별도 retry 디렉터리에 둔다. |
 
 ## 전체 워크플로우 불변 규칙 (orchestration)
 
@@ -39,15 +39,17 @@ description: Use when 사용자가 $agent-team을 명시적으로 호출해 AI �
 - 흐름은 순차 진행과 제한된 반복이다. 병렬 실행은 하지 않는다. `sub-agent`를 쓰더라도 한 번에 한 역할만 실행한다.
 - 기본 실행 모드는 `auto_split`이다. PM 인터뷰는 현재 대화에서 수행하고, 이후 역할별 작업은 `sub-agent`로 순차 실행한다. `sub-agent` 도구를 사용할 수 없으면 `single_session`으로 전환해 같은 대화 안에서 역할 라벨로 순차 수행한다.
 - PM 인터뷰는 `sub-agent`로 실행하지 않는다. 현재 대화에서 PM 역할 라벨로 사용자에게 직접 한 가지씩 질문한다.
-- Root orchestrator는 PM 역할을 시작하기 전에 실행 위치, `mode`, `run-id`, `execution_mode`, 생성한 초기 파일만 `00-run-setup.md`에 기록한다. 프로젝트 의미, 목표, 주요 사용자, 문제 정의는 정리하지 않는다. 이 내용은 PM 인터뷰 책임이다.
+- Root orchestrator는 PM 역할을 시작하기 전에 실행 위치, `mode`, `run-id`, `execution_mode`, 생성한 초기 파일, `Runtime Preconditions Gate` 결과를 `00-run-setup.md`에 기록한다. 프로젝트 의미, 목표, 주요 사용자, 문제 정의는 정리하지 않는다. 이 내용은 PM 인터뷰 책임이다.
+- `Runtime Preconditions Gate`는 실제 실행 검증 방식만 확인한다. 선택지는 `no-runtime`, `local-process`, `local-docker-compose`, `existing-deployed-url`, `kubernetes-or-cluster`, `cloud-managed`, `ci-runtime`, `mock-or-simulator`, `hybrid`다. Root는 여기서 secret 값이나 env-file 경로를 문서에 저장하지 않고, 필요한 경우 "runtime 주입은 구현 직전 일회성 입력"으로만 기록한다.
 - Root orchestrator는 PM 인터뷰 내용을 확정하거나 요약하지 않는다. 현재 대화의 PM 역할이 질문하고, 사용자 답변을 받은 뒤 `00-pm-interview.md`에 기록한다.
 - `briefs/pm.md`는 초기 파일 생성과 컨텍스트 로드가 끝나면 생성한다. PM은 `00-run-setup.md`, `00-context.md`, 필요 시 기존 `00-pm-interview.md`를 입력으로 인터뷰와 명세 작성을 수행한다.
 - Root orchestrator의 상태 갱신, 분기, 반복 한도, `stage gate` 책임은 `references/workflow-runtime.md`를 따른다.
 - 프로젝트 주제나 초기 목표가 없어도 실행 디렉터리는 만들 수 있다. 이 경우 `run-id`는 `YYYY-MM-DD-agent-team` 형식으로 만들고, 프로젝트 의미와 목표는 PM 인터뷰에서 확인한다.
 - 구현 흐름이라면 수정할 대상 저장소/프로젝트의 절대 경로 또는 현재 작업 디렉터리를 확인한다. 기획/명세만 진행한다면 산출물을 저장할 기준 디렉터리를 확인한다.
 - 실행 산출물은 기본적으로 `<선택한 저장 위치>/docs/agent-team/<run-id>/`에 저장한다. 구현 흐름에서는 대상 저장소 루트를 선택한 저장 위치로 사용하고, 기획/명세만 진행하고 프로젝트 저장소가 없으면 사용자가 지정한 저장 위치를 사용한다.
+- top-level numbered 산출물은 lifecycle stage 전용이다. `00-run-setup.md`, `00-context.md`, `00-pm-interview.md`, `01-pm-spec.md`, `02-expert-gateway-spec.md`, `03-architect-design.md`, `04-expert-gateway-design.md`, `05-work-plan.md`, `06-developer-implementation.md`, `07-reviewer-verification.md`, `08-expert-gateway-final.md`, `09-final-report.md` 외의 `NN-*.md`를 run root에 만들지 않는다. Reviewer 이후 재설계/재구현/재검증 산출물은 `reviewer-retry-<n>/NN-*.md`처럼 별도 retry 디렉터리 내부 번호를 쓴다.
 - 사용자가 기존 `docs/agent-team/<run-id>/` 실행 경로를 “참고”, “비슷하게”, “비교” 대상으로 지정하면, 그 경로는 요구사항 원본이 아니라 산출물 품질과 구조의 기준 실행(reference run)으로 읽는다. Root orchestrator는 기준 실행의 파일 목록, 섹션 구조, 반복해서 보존된 데이터/기술/검증 경계를 `00-context.md`에 요약하고, PM은 현재 실행에서 확인된 사용자 답변만 확정 요구사항으로 삼는다.
-- 사용자에게 묻는 경우는 실행 시작 정보 누락, 현재 대화에서 수행하는 PM 인터뷰 질문, 역할이 올린 `question_request`의 PM clarification, 구현 전 사용자 승인, 컨텍스트 로드 실패 후 계속 진행 확인, Domain Expert Gateway `Blocked`, 재시도 한도 초과, `user_final_confirmation`으로 제한한다.
+- 사용자에게 묻는 경우는 실행 시작 정보 누락, Root의 `Runtime Preconditions Gate`, 현재 대화에서 수행하는 PM 인터뷰 질문, 역할이 올린 `question_request`의 PM clarification, 구현 전 사용자 승인, 컨텍스트 로드 실패 후 계속 진행 확인, Domain Expert Gateway `Blocked`, 재시도 한도 초과, `user_final_confirmation`으로 제한한다.
 - Git 커밋은 자동으로 하지 않는다. 대상이 Git 저장소이고 사용자가 승인한 경우에만 커밋한다.
 - 공통 규칙은 특정 도메인이나 기술 스택을 고정하지 않는다. 프로젝트별 요구사항은 실행 작업 지시서, 산출물, 가정에만 넣는다.
 - 문장은 한글 중심으로 쓴다. 단, 역할명, 열거값, 파일명, 경로, JSON 키, 단계 값 같은 실행 식별자는 그대로 둔다.
@@ -60,6 +62,8 @@ description: Use when 사용자가 $agent-team을 명시적으로 호출해 AI �
 - 기술 방향 보존: 기술 방향은 `required`, `preferred`, `candidate`로 구분해 기록하고, `required`로 확정된 기술은 이후 역할이 임의로 `preferred`/`candidate`로 낮추지 않는다. 분류 기준, 하위 서비스/모듈 식별, runtime/config checklist 같은 상세 처리는 PM/Architect 역할 프롬프트를 따른다.
 - 구체적 서술: “입력/루프/피드백/계약/후속/사용” 같은 추상 표현만으로 산출물을 완료하지 않는다. 누가 무엇을 만들고, 어떤 필드/파일로 저장하며, 어느 단계에서 읽고, 무엇에는 쓰지 않는지까지 풀어쓴다.
 - 데이터 경계: 데이터 소스는 파일 경로, 형식, 성격, 역할, 허용/금지 사용으로 분리해 쓰고, 원천 데이터와 파생 feature/지표를 같은 데이터로 합치지 않는다.
+- Feature coverage: 사용자가 feature/metadata 개수나 후보 그룹을 확정하면 PM, Architect, Developer, Reviewer는 expected count와 actual count를 계속 추적한다. 승인 없이 확정 요구를 일부 구현으로 줄이면 완료가 아니라 명세 불일치, 미구현, 또는 사용자 재확인 대상이다.
+- 실행 일관성: mode 실행 순서, config 경로, 포트, role brief의 Task 범위는 PM 명세, Architect 설계, Work Plan, Developer brief, 실제 config 사이에서 일치해야 한다. 다르면 다음 단계로 넘기기 전에 stage gate 실패 또는 Reviewer issue로 남긴다.
 - 사용자-facing 표현: 설명 없는 영어 라벨을 남기지 않고 한국어 의미를 먼저 쓴다. “현재 저장소 상태”처럼 시간이 지나면 틀려질 문장에는 작성 시점을 붙인다.
 - PoC/실서비스 경계: AI 예측/추천/분류 PoC에서 운영 데이터 기반 지속개선이 나오면 PoC 구현 범위와 실서비스 운영 범위를 분리한다.
 
@@ -68,6 +72,8 @@ description: Use when 사용자가 $agent-team을 명시적으로 호출해 AI �
 - 산출물 형식이나 표현 문제가 재현성 있는 규칙 문제라면 현재 실행 문서와 함께 역할 프롬프트, `references/workflow-runtime.md` 검증 기준을 보완하고, 보완 후 구조·의미·표현 3가지 관점으로 재검토한다.
 - 공통 규칙을 보완한 뒤에는 같은 유형의 산출물에서 문제가 반복될지 확인한다. 최소 3회 반복 기준은 1) 구조 누락 방지, 2) 의미/범위 오해 방지, 3) 표현/추적성 누락 방지를 순서대로 점검하고, 각 회차마다 `rg`나 작은 스크립트로 반영 여부를 확인하는 것이다.
 - 기준 실행과 다르게 나온 문제를 고칠 때는 기준 실행을 그대로 복사하지 않는다. 대신 차이를 구조(누락 파일/섹션/상태), 의미(데이터 경계/기술 제약/PoC와 실서비스 경계), 표현(도메인 사용자가 읽을 수 있는 라벨/추적성)으로 나누고, 재현 가능한 차이만 역할 프롬프트나 `stage gate` 규칙에 반영한다.
+- 스킬 자체를 보완하기 전 일반화 검사를 한다. 새 규칙에 특정 실행의 가정 ID, 파일명, mode명, metric명, 모델명, 서비스명, 컬럼명, 포트, 경로가 들어가면 실행 디렉터리의 brief/checklist로 내리고, 스킬에는 “required 플랫폼”, “primary metric”, “feature coverage contract”처럼 조건부 범용 규칙만 남긴다.
+- 새 규칙은 다른 도메인에서도 성립해야 한다. 특정 프로젝트에서만 필요한 수용 기준은 `docs/agent-team/<run-id>/` 산출물, `assumptions.md`, 또는 역할 brief에 둔다.
 
 ## Root orchestrator가 읽는 참고 파일
 
@@ -90,7 +96,8 @@ description: Use when 사용자가 $agent-team을 명시적으로 호출해 AI �
 2. 기존 실행을 이어간다면 `<선택한 저장 위치>/docs/agent-team/<run-id>/run-state.json`을 읽고 `references/workflow-runtime.md`를 따른다.
 3. 새 실행이면 사용자가 명시한 주제어가 있을 때만 `YYYY-MM-DD-topic-slug` 형식으로 실행 ID를 만든다. 주제어가 없으면 `YYYY-MM-DD-agent-team` 형식으로 만들고, 프로젝트 의미와 목표는 PM 인터뷰에서 확인한다. 중복되면 `-2`, `-3`을 붙인다.
 4. 새 실행이면 `run-state.json`, `00-run-setup.md`, `00-context.md`, `00-pm-interview.md`, `assumptions.md`, `briefs/`를 초기화한다. 기존 실행이면 `run-state.json`을 로드한다.
-5. `$llm-wiki <keyword>`, `wiki-<keyword>`, `컨텍스트 불러와`가 있으면 PM 명세 전에 컨텍스트를 로드한다.
+5. PM 인터뷰 전에 `Runtime Preconditions Gate`를 수행한다. 실행 검증이 필요한 작업이면 runtime 방식을 한 가지로 확정하고, `local-docker-compose`처럼 로컬 런타임이 선택되면 compose가 없을 때 설치/부팅까지 Root/Developer 실행 책임으로 기록한다.
+6. `$llm-wiki <keyword>`, `wiki-<keyword>`, `컨텍스트 불러와`가 있으면 PM 명세 전에 컨텍스트를 로드한다.
    - 현재 세션에서 `llm-wiki` 스킬을 읽고 실행할 수 있으면 그 절차를 따른다.
    - 성공하면 요약과 참고 파일을 `00-context.md`에 쓴다.
    - `llm-wiki`를 사용할 수 없거나 매칭 실패하면 확인한 출처와 실패 내용을 `00-context.md`에 기록하고 계속 진행할지 묻는다.
@@ -109,6 +116,8 @@ description: Use when 사용자가 $agent-team을 명시적으로 호출해 AI �
 - 역할은 자기 역할 범위의 산출물만 작성한다. 역할 실행이 끝나면 Root orchestrator가 `run-state.json`을 갱신할 수 있도록 완료한 산출물 경로, 제안하는 `next_stage`, `blocked_reason` 후보, 추가/변경한 가정 ID를 짧게 보고한다.
 - Domain Expert Gateway를 시작할 때는 `briefs/domain-expert.md`를 최신 실행용으로 갱신하고, 같은 내용을 Gateway별 스냅샷으로도 저장한다. Gateway 1은 `briefs/domain-expert-01-spec.md`, Gateway 2는 `briefs/domain-expert-02-design.md`, Gateway 3은 `briefs/domain-expert-03-final.md`를 사용한다. 같은 Gateway를 재시도하면 기존 스냅샷을 덮어쓰지 말고 `-retry-<n>` suffix를 붙인 파일로 남긴다.
 - Architect 단계를 시작할 때는 `briefs/architect.md`를 최신 실행용으로 갱신하고, 같은 내용을 단계별 스냅샷으로도 저장한다. 설계 단계는 `briefs/architect-01-design.md`, 구현 계획 단계는 `briefs/architect-02-work-plan.md`를 사용한다. 같은 Architect 단계를 재시도하면 기존 스냅샷을 덮어쓰지 말고 `-retry-<n>` suffix를 붙인 파일로 남긴다.
+- Developer 또는 Reviewer 재시도에서는 최신 `briefs/developer.md`, `briefs/reviewer.md`를 갱신하되 기존 입력 지시를 덮어쓰지 않도록 `briefs/developer-retry-<n>.md`, `briefs/reviewer-retry-<n>.md` snapshot도 남긴다.
+- Reviewer `ChangesRequested` 이후 발생한 재설계, 보정 계획, Developer fix, 재검증 보조 산출물은 top-level stage 번호를 증가시키지 않는다. `reviewer-retry-<n>/01-...md`, `reviewer-retry-<n>/02-...md`처럼 retry 디렉터리 안에서만 번호를 매긴다. 필요하면 `run-state.json.artifacts`에는 `reviewer_retry_<n>_...` key로 경로를 추적한다.
 - Developer와 Reviewer 산출물은 “구현했다/검증했다”는 요약만 쓰지 않는다. 실제 변경 파일, 실행한 명령, 생성된 artifact, 실패 artifact, 미검증 항목을 별도 섹션으로 분리해 남긴다.
 
 ## Root orchestrator 노출 기준
@@ -137,6 +146,7 @@ Domain Expert는 코드 리뷰어가 아니다. Domain Expert는 도메인 용�
 ### 에이전트 팀
 
 - 실행 방식: <auto_split: PM 인터뷰는 현재 대화, 이후 역할은 sub-agent 순차 실행 / single_session: 역할 라벨 순차 실행>
+- runtime 방식: <no-runtime / local-process / local-docker-compose / existing-deployed-url / kubernetes-or-cluster / cloud-managed / ci-runtime / mock-or-simulator / hybrid>
 - 실행 디렉터리: <선택한 저장 위치>/docs/agent-team/<run-id>/
 - 컨텍스트 상태: <없음 또는 "{키워드} wiki 로드 완료" 또는 "{키워드} wiki 로드 실패">
 - 재개 상태: <새 실행 또는 "{run-id}에서 {stage} 다음 단계부터 재개">
