@@ -1,4 +1,9 @@
 {
+  "codexMcpServerOverrides": {
+    "codex_apps": {
+      "startup_timeout_sec": 120
+    }
+  },
   "mcpServers": {
     "chrome-devtools": {
       "type": "stdio",
