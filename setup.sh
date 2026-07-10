@@ -237,6 +237,7 @@ ensure_block_in_file "$HOME/.profile" "$PATH_DEDUPE_BEGIN" "$PATH_DEDUPE_END" "$
 # --- ~/bin wrappers (push/save automation) ---
 mkdir -p "$HOME/bin"
 
+rm -f "$HOME/bin/claude"
 cat > "$HOME/bin/claude" <<'EOF'
 #!/usr/bin/env bash
 set -euo pipefail
@@ -264,6 +265,7 @@ EOF
 chmod +x "$HOME/bin/claude"
 echo "✓ ~/bin/claude"
 
+rm -f "$HOME/bin/codex"
 cat > "$HOME/bin/codex" <<'CODEX_WRAPPER_EOF'
 #!/usr/bin/env bash
 set -euo pipefail
@@ -399,6 +401,7 @@ CODEX_WRAPPER_EOF
 chmod +x "$HOME/bin/codex"
 echo "✓ ~/bin/codex"
 
+rm -f "$HOME/bin/wiki"
 cat > "$HOME/bin/wiki" <<'EOF'
 #!/usr/bin/env bash
 set -euo pipefail
@@ -417,6 +420,7 @@ EOF
 chmod +x "$HOME/bin/wiki"
 echo "✓ ~/bin/wiki"
 
+rm -f "$HOME/bin/cdd-work"
 cat > "$HOME/bin/cdd-work" <<'EOF'
 #!/usr/bin/env bash
 set -euo pipefail
@@ -431,6 +435,7 @@ EOF
 chmod +x "$HOME/bin/cdd-work"
 echo "✓ ~/bin/cdd-work"
 
+rm -f "$HOME/bin/cdd-personal"
 cat > "$HOME/bin/cdd-personal" <<'EOF'
 #!/usr/bin/env bash
 set -euo pipefail
@@ -445,6 +450,7 @@ EOF
 chmod +x "$HOME/bin/cdd-personal"
 echo "✓ ~/bin/cdd-personal"
 
+rm -f "$HOME/bin/cdd-personal-login"
 cat > "$HOME/bin/cdd-personal-login" <<'EOF'
 #!/usr/bin/env bash
 set -euo pipefail

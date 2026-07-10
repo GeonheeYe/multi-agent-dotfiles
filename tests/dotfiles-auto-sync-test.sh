@@ -101,6 +101,8 @@ trap 'rm -rf "$temp_home"' EXIT
 personal_home="$temp_home/.codex-personal-home"
 mkdir -p "$temp_home/.codex/skills/.system" "$personal_home/.codex" "$temp_home/bin" "$temp_home/.ssh"
 touch "$temp_home/.ssh/id_ed25519_s20"
+printf '%s\n' '# original wiki target' >"$temp_home/linked-wiki-source"
+ln -s "$temp_home/linked-wiki-source" "$temp_home/bin/wiki"
 HOME="$personal_home" DOTFILES_ACCOUNT_HOME="$temp_home" DOTFILES_SKIP_LAUNCHD=1 bash "$ROOT/setup.sh" >/dev/null 2>&1 || true
 HOME="$personal_home" DOTFILES_ACCOUNT_HOME="$temp_home" DOTFILES_SKIP_LAUNCHD=1 bash "$ROOT/setup.sh" >/dev/null 2>&1 || true
 
@@ -109,6 +111,8 @@ HOME="$personal_home" DOTFILES_ACCOUNT_HOME="$temp_home" DOTFILES_SKIP_LAUNCHD=1
 [ -e "$temp_home/.codex/skills/.system" ] || fail "setup should preserve work profile system skills"
 [ -L "$temp_home/.codex/prompts" ] || fail "work profile should link shared prompts"
 [ -L "$personal_home/.codex/prompts" ] || fail "personal profile should link shared prompts"
+[ "$(cat "$temp_home/linked-wiki-source")" = "# original wiki target" ] || fail "setup must not overwrite a symlink target when installing the wiki wrapper"
+[ -f "$temp_home/bin/wiki" ] && [ ! -L "$temp_home/bin/wiki" ] || fail "setup should replace a wiki symlink with a regular wrapper"
 
 [ -f "$temp_home/bin/claude" ] || fail "setup should install ~/bin/claude wrapper"
 [ -f "$temp_home/bin/codex" ] || fail "setup should install ~/bin/codex wrapper"
