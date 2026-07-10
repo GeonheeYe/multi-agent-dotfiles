@@ -98,9 +98,17 @@ fi
 
 temp_home="$(mktemp -d)"
 trap 'rm -rf "$temp_home"' EXIT
-mkdir -p "$temp_home/.codex" "$temp_home/bin"
-HOME="$temp_home" DOTFILES_SKIP_LAUNCHD=1 bash "$ROOT/setup.sh" >/dev/null 2>&1 || true
-HOME="$temp_home" DOTFILES_SKIP_LAUNCHD=1 bash "$ROOT/setup.sh" >/dev/null 2>&1 || true
+personal_home="$temp_home/.codex-personal-home"
+mkdir -p "$temp_home/.codex/skills/.system" "$personal_home/.codex" "$temp_home/bin" "$temp_home/.ssh"
+touch "$temp_home/.ssh/id_ed25519_s20"
+HOME="$personal_home" DOTFILES_ACCOUNT_HOME="$temp_home" DOTFILES_SKIP_LAUNCHD=1 bash "$ROOT/setup.sh" >/dev/null 2>&1 || true
+HOME="$personal_home" DOTFILES_ACCOUNT_HOME="$temp_home" DOTFILES_SKIP_LAUNCHD=1 bash "$ROOT/setup.sh" >/dev/null 2>&1 || true
+
+[ -L "$temp_home/.codex/skills/llm-wiki" ] || fail "work profile should link shared skills"
+[ -L "$personal_home/.codex/skills/llm-wiki" ] || fail "personal profile should link shared skills"
+[ -e "$temp_home/.codex/skills/.system" ] || fail "setup should preserve work profile system skills"
+[ -L "$temp_home/.codex/prompts" ] || fail "work profile should link shared prompts"
+[ -L "$personal_home/.codex/prompts" ] || fail "personal profile should link shared prompts"
 
 [ -f "$temp_home/bin/claude" ] || fail "setup should install ~/bin/claude wrapper"
 [ -f "$temp_home/bin/codex" ] || fail "setup should install ~/bin/codex wrapper"

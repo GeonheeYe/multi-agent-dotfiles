@@ -223,8 +223,8 @@ _run_codex_with_home() {
 
   _prepare_codex_profile "$profile_home"
 
-  sessions_dir="${CODEX_SESSIONS_DIR:-$profile_home/.codex/sessions}"
-  save_session_dir="${SAVE_SESSION_DIR:-$profile_home/codex-sessions}"
+  sessions_dir="$profile_home/.codex/sessions"
+  save_session_dir="$profile_home/codex-sessions"
 
   before_file="$(_latest_codex_session_file "$sessions_dir")"
   before_mtime=0
@@ -305,14 +305,10 @@ ccr() {
 
 # Codex
 cdd() {
-  _ensure_latest_codex
-  if _require_cmd codex; then
-    codex --dangerously-bypass-approvals-and-sandbox "$@"
-    _dotfiles_push
-  else
-    printf 'codex command not found\n' >&2
-    return 127
-  fi
+  _run_codex_with_home "$CODEX_WORK_HOME" --dangerously-bypass-approvals-and-sandbox "$@"
+  local exit_code=$?
+  _dotfiles_push
+  return "$exit_code"
 }
 
 cdd-work() {

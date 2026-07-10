@@ -3,6 +3,17 @@
 set -e
 
 DOTFILES="$(cd "$(dirname "$0")" && pwd)"
+ACTIVE_HOME="$HOME"
+if [ -n "${DOTFILES_ACCOUNT_HOME:-}" ]; then
+  ACCOUNT_HOME="$DOTFILES_ACCOUNT_HOME"
+elif [ "$(basename "$ACTIVE_HOME")" = ".codex-personal-home" ]; then
+  ACCOUNT_HOME="$(dirname "$ACTIVE_HOME")"
+else
+  ACCOUNT_HOME="$ACTIVE_HOME"
+fi
+PERSONAL_HOME="${CODEX_PERSONAL_HOME:-$ACCOUNT_HOME/.codex-personal-home}"
+HOME="$ACCOUNT_HOME"
+export HOME
 
 echo "=== dotfiles setup ==="
 
@@ -67,6 +78,30 @@ copy_skill_dir() {
   echo "✓ plugin skill copied: $skill_name"
 }
 
+sync_codex_profile() {
+  local profile_home="$1"
+  local skills_dir="$profile_home/.codex/skills"
+  local source_dir
+  local skill_name
+
+  mkdir -p "$profile_home/.codex"
+  if [ -L "$skills_dir" ]; then
+    rm "$skills_dir"
+  fi
+  mkdir -p "$skills_dir"
+
+  for source_dir in "$DOTFILES/skills"/*; do
+    [ -d "$source_dir" ] || continue
+    skill_name="$(basename "$source_dir")"
+    rm -rf "$skills_dir/$skill_name"
+    ln -s "$source_dir" "$skills_dir/$skill_name"
+  done
+
+  rm -rf "$profile_home/.codex/prompts"
+  ln -s "$DOTFILES/commands" "$profile_home/.codex/prompts"
+  echo "✓ $profile_home/.codex shared skills/prompts"
+}
+
 # --- plugins (Claude Code 전용) ---
 if [ -d "$HOME/.claude" ]; then
   rm -rf ~/.claude/plugins
@@ -79,10 +114,8 @@ if [ -d "$HOME/.claude" ]; then
   ln -s "$DOTFILES/skills" ~/.claude/skills && echo "✓ ~/.claude/skills"
 fi
 
-if [ -d "$HOME/.codex" ]; then
-  rm -rf ~/.codex/skills
-  ln -s "$DOTFILES/skills" ~/.codex/skills && echo "✓ ~/.codex/skills"
-fi
+sync_codex_profile "$ACCOUNT_HOME"
+sync_codex_profile "$PERSONAL_HOME"
 
 if [ -d "$HOME/.cursor" ]; then
   ln -sfn "$DOTFILES/skills" ~/.cursor/skills && echo "✓ ~/.cursor/skills"
@@ -99,10 +132,6 @@ fi
 if [ -d "$HOME/.claude" ]; then
   rm -rf ~/.claude/commands
   ln -s "$DOTFILES/commands" ~/.claude/commands && echo "✓ ~/.claude/commands"
-fi
-
-if [ -d "$HOME/.codex" ]; then
-  ln -sfn "$DOTFILES/commands" ~/.codex/prompts && echo "✓ ~/.codex/prompts"
 fi
 
 if [ -d "$HOME/.cursor" ]; then
@@ -151,7 +180,8 @@ if [ -f "$DOTFILES/mcp/secrets.json" ]; then
     fi
   fi
 
-  "$DOTFILES/mcp/apply.sh" || echo "⚠ MCP 설정 적용 실패 — 계속 진행"
+  MCP_TARGET_HOME="$ACCOUNT_HOME" "$DOTFILES/mcp/apply.sh" || echo "⚠ work MCP 설정 적용 실패 — 계속 진행"
+  MCP_TARGET_HOME="$PERSONAL_HOME" "$DOTFILES/mcp/apply.sh" || echo "⚠ personal MCP 설정 적용 실패 — 계속 진행"
 else
   echo "⚠ mcp/secrets.json 없음 — MCP 설정 건너뜀"
 fi

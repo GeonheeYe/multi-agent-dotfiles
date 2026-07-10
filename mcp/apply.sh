@@ -100,12 +100,6 @@ for name, cfg in servers['mcpServers'].items():
         for k, v in cfg['env'].items():
             mcp_toml += f'{k} = "{toml_escape(v)}"\n'
 
-# Codex가 내부 등록하는 MCP 서버에는 Codex 전용 옵션만 덮어쓴다.
-for name, cfg in servers.get('codexMcpServerOverrides', {}).items():
-    mcp_toml += f'\n[mcp_servers.{name}]\n'
-    if cfg.get('startup_timeout_sec') is not None:
-        mcp_toml += f'startup_timeout_sec = {int(cfg["startup_timeout_sec"])}\n'
-
 with open(toml_path, 'w') as f:
     f.write(base_toml + mcp_toml)
 

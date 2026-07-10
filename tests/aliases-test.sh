@@ -30,7 +30,7 @@ echo 'model = "gpt-5.4"' >"$temp_home/.codex/config.toml"
 
 cat >"$temp_home/bin/codex-real" <<'EOF'
 #!/usr/bin/env bash
-printf 'real:%s args:%s\n' "$HOME" "$*"
+printf 'real:%s codex_home:%s sessions:%s args:%s\n' "$HOME" "$CODEX_HOME" "$CODEX_SESSIONS_DIR" "$*"
 EOF
 chmod +x "$temp_home/bin/codex-real"
 
@@ -42,41 +42,58 @@ EOF
   chmod +x "$temp_home/dotfiles/scripts/$script"
 done
 
-work_output="$(
-  HOME="$temp_home" DOTFILES="$temp_home/dotfiles" REAL_CODEX_BIN="$temp_home/bin/codex-real" /bin/bash -lc '
+work_output_file="$temp_home/work-output"
+HOME="$temp_home" DOTFILES="$temp_home/dotfiles" REAL_CODEX_BIN="$temp_home/bin/codex-real" /bin/bash -c '
     source "'"$ALIASES"'"
     cdd-work hello
-  '
-)"
-assert_contains "$work_output" "real:$temp_home args:--dangerously-bypass-approvals-and-sandbox hello" "cdd-work should use current HOME and bypass flag"
+  ' >"$work_output_file"
+work_output="$(cat "$work_output_file")"
+assert_contains "$work_output" "real:$temp_home " "cdd-work should use current HOME"
+assert_contains "$work_output" "args:--dangerously-bypass-approvals-and-sandbox hello" "cdd-work should use the bypass flag"
+assert_contains "$work_output" "codex_home:$temp_home/.codex" "cdd-work should use the work CODEX_HOME"
+assert_contains "$work_output" "sessions:$temp_home/.codex/sessions" "cdd-work should keep work sessions separate"
 
-personal_output="$(
-  HOME="$temp_home" DOTFILES="$temp_home/dotfiles" REAL_CODEX_BIN="$temp_home/bin/codex-real" /bin/bash -lc '
+cdd_output_file="$temp_home/cdd-output"
+HOME="$temp_home" DOTFILES="$temp_home/dotfiles" REAL_CODEX_BIN="$temp_home/bin/codex-real" /bin/bash -c '
+    source "'"$ALIASES"'"
+    cdd short
+  ' >"$cdd_output_file"
+cdd_output="$(cat "$cdd_output_file")"
+assert_contains "$cdd_output" "real:$temp_home " "cdd should use the work profile HOME"
+assert_contains "$cdd_output" "args:--dangerously-bypass-approvals-and-sandbox short" "cdd should use the bypass flag"
+
+personal_output_file="$temp_home/personal-output"
+HOME="$temp_home" DOTFILES="$temp_home/dotfiles" REAL_CODEX_BIN="$temp_home/bin/codex-real" /bin/bash -c '
     source "'"$ALIASES"'"
     cdd-personal world
-  '
-)"
-assert_contains "$personal_output" "real:$temp_home/.codex-personal-home args:--dangerously-bypass-approvals-and-sandbox world" "cdd-personal should use personal HOME and bypass flag"
+  ' >"$personal_output_file"
+personal_output="$(cat "$personal_output_file")"
+assert_contains "$personal_output" "real:$temp_home/.codex-personal-home " "cdd-personal should use personal HOME"
+assert_contains "$personal_output" "args:--dangerously-bypass-approvals-and-sandbox world" "cdd-personal should use the bypass flag"
+assert_contains "$personal_output" "codex_home:$temp_home/.codex-personal-home/.codex" "cdd-personal should use the personal CODEX_HOME"
+assert_contains "$personal_output" "sessions:$temp_home/.codex-personal-home/.codex/sessions" "cdd-personal should keep personal sessions separate"
 [ -L "$temp_home/.codex-personal-home/.codex/skills" ] || fail "cdd-personal should link shared skills"
 [ -L "$temp_home/.codex-personal-home/.codex/prompts" ] || fail "cdd-personal should link shared prompts"
 [ -L "$temp_home/.codex-personal-home/.codex/config.toml" ] || fail "cdd-personal should link shared config"
 [ -L "$temp_home/.codex-personal-home/.codex/plugins/cache" ] || fail "cdd-personal should link shared plugin cache"
 
-personal_update_output="$(
-  HOME="$temp_home" DOTFILES="$temp_home/dotfiles" REAL_CODEX_BIN="$temp_home/bin/codex-real" /bin/bash -lc '
+personal_update_output_file="$temp_home/personal-update-output"
+HOME="$temp_home" DOTFILES="$temp_home/dotfiles" REAL_CODEX_BIN="$temp_home/bin/codex-real" /bin/bash -c '
     source "'"$ALIASES"'"
     cdd-personal update
-  '
-)"
-assert_contains "$personal_update_output" "real:$temp_home/.codex-personal-home args:update" "cdd-personal update should run codex update with personal HOME"
+  ' >"$personal_update_output_file"
+personal_update_output="$(cat "$personal_update_output_file")"
+assert_contains "$personal_update_output" "real:$temp_home/.codex-personal-home " "cdd-personal update should use personal HOME"
+assert_contains "$personal_update_output" "args:update" "cdd-personal update should run codex update"
 
-login_output="$(
-  HOME="$temp_home" DOTFILES="$temp_home/dotfiles" REAL_CODEX_BIN="$temp_home/bin/codex-real" /bin/bash -lc '
+login_output_file="$temp_home/login-output"
+HOME="$temp_home" DOTFILES="$temp_home/dotfiles" REAL_CODEX_BIN="$temp_home/bin/codex-real" /bin/bash -c '
     source "'"$ALIASES"'"
     cdd-personal-login status
-  '
-)"
-assert_contains "$login_output" "real:$temp_home/.codex-personal-home args:login status" "cdd-personal-login should use personal HOME without bypass flag"
+  ' >"$login_output_file"
+login_output="$(cat "$login_output_file")"
+assert_contains "$login_output" "real:$temp_home/.codex-personal-home " "cdd-personal-login should use personal HOME"
+assert_contains "$login_output" "args:login status" "cdd-personal-login should run login without bypass flag"
 
 mkdir -p "$temp_home/old-codex/bin" "$temp_home/new-codex/bin"
 cat >"$temp_home/bin/codex" <<'EOF'
