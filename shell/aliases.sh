@@ -237,7 +237,11 @@ _run_codex_with_home() {
   esac
 
   set +e
-  HOME="$profile_home" DOTFILES="$DOTFILES" CODEX_SESSIONS_DIR="$sessions_dir" "$real_bin" "$@"
+  HOME="$profile_home" \
+    CODEX_HOME="$profile_home/.codex" \
+    DOTFILES="$DOTFILES" \
+    CODEX_SESSIONS_DIR="$sessions_dir" \
+    "$real_bin" "$@"
   exit_code=$?
   if [ "$had_errexit" -eq 1 ]; then
     set -e
