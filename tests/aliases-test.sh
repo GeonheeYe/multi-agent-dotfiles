@@ -62,6 +62,15 @@ cdd_output="$(cat "$cdd_output_file")"
 assert_contains "$cdd_output" "real:$temp_home " "cdd should use the work profile HOME"
 assert_contains "$cdd_output" "args:--dangerously-bypass-approvals-and-sandbox short" "cdd should use the bypass flag"
 
+personal_shell_output_file="$temp_home/personal-shell-output"
+HOME="$temp_home/.codex-personal-home" DOTFILES="$temp_home/dotfiles" REAL_CODEX_BIN="$temp_home/bin/codex-real" /bin/bash -c '
+    source "'"$ALIASES"'"
+    cdd from-personal-shell
+  ' >"$personal_shell_output_file"
+personal_shell_output="$(cat "$personal_shell_output_file")"
+assert_contains "$personal_shell_output" "real:$temp_home " "cdd should recover the work HOME when sourced inside the personal profile"
+assert_contains "$personal_shell_output" "codex_home:$temp_home/.codex" "cdd should recover the work CODEX_HOME inside the personal profile"
+
 personal_output_file="$temp_home/personal-output"
 HOME="$temp_home" DOTFILES="$temp_home/dotfiles" REAL_CODEX_BIN="$temp_home/bin/codex-real" /bin/bash -c '
     source "'"$ALIASES"'"

@@ -1,8 +1,14 @@
 # dotfiles/shell/aliases.sh
 # bash/zsh에서 공통으로 source 가능한 최소 래퍼 함수들
 
-DOTFILES="${DOTFILES:-$HOME/dotfiles}"
-DOTFILES_HOME="${DOTFILES_HOME:-$HOME}"
+if [ -z "${DOTFILES_HOME:-}" ]; then
+  if [ "$(basename "$HOME")" = ".codex-personal-home" ]; then
+    DOTFILES_HOME="$(dirname "$HOME")"
+  else
+    DOTFILES_HOME="$HOME"
+  fi
+fi
+DOTFILES="${DOTFILES:-$DOTFILES_HOME/dotfiles}"
 CODEX_WORK_HOME="${CODEX_WORK_HOME:-$DOTFILES_HOME}"
 CODEX_PERSONAL_HOME="${CODEX_PERSONAL_HOME:-$DOTFILES_HOME/.codex-personal-home}"
 
