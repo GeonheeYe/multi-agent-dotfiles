@@ -276,7 +276,7 @@ PYEOF
 }
 
 # 기존 interactive alias가 함수 정의 토큰을 깨뜨리지 않도록 정리
-unalias cc ccd ccr cdd cdd-work cdd-personal cdd-personal-login cu 2>/dev/null || true
+unalias cc ccd ccr cdd cdd-login cdd-work cdd-personal cdd-personal-login cu 2>/dev/null || true
 
 # Claude Code
 cc() {
@@ -312,6 +312,13 @@ ccr() {
 # Codex
 cdd() {
   _run_codex_with_home "$CODEX_WORK_HOME" --dangerously-bypass-approvals-and-sandbox "$@"
+  local exit_code=$?
+  _dotfiles_push
+  return "$exit_code"
+}
+
+cdd-login() {
+  _run_codex_with_home "$CODEX_WORK_HOME" login "$@"
   local exit_code=$?
   _dotfiles_push
   return "$exit_code"

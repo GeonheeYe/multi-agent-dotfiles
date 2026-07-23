@@ -62,6 +62,15 @@ cdd_output="$(cat "$cdd_output_file")"
 assert_contains "$cdd_output" "real:$temp_home " "cdd should use the work profile HOME"
 assert_contains "$cdd_output" "args:--dangerously-bypass-approvals-and-sandbox short" "cdd should use the bypass flag"
 
+login_work_output_file="$temp_home/login-work-output"
+HOME="$temp_home" DOTFILES="$temp_home/dotfiles" REAL_CODEX_BIN="$temp_home/bin/codex-real" /bin/bash -c '
+    source "'"$ALIASES"'"
+    cdd-login status
+  ' >"$login_work_output_file"
+login_work_output="$(cat "$login_work_output_file")"
+assert_contains "$login_work_output" "real:$temp_home " "cdd-login should use the work profile HOME"
+assert_contains "$login_work_output" "args:login status" "cdd-login should run login without bypass flag"
+
 personal_shell_output_file="$temp_home/personal-shell-output"
 HOME="$temp_home/.codex-personal-home" DOTFILES="$temp_home/dotfiles" REAL_CODEX_BIN="$temp_home/bin/codex-real" /bin/bash -c '
     source "'"$ALIASES"'"
