@@ -6,7 +6,7 @@ description: 회의 녹음 파일을 chunked Whisper STT로 처리하고, 선택
 # Meeting 스킬
 
 오디오 파일을 받아 전체 파이프라인을 실행한다:
-오디오 보정 → chunked STT → (선택적) 화자분리 → Claude 교정+요약 → (선택적) Dooray 위키 업로드
+오디오 보정 → chunked STT → (선택적) 화자분리 → Claude 교정+요약 → 프로젝트 Notion 자동 업로드 또는 선택적 Notion/Dooray 업로드
 
 ## 소스 추적
 
@@ -223,7 +223,12 @@ ARGUMENTS에서 다음 정보를 추출한다:
 - **컨텍스트**: 기술 용어나 회의 주제 설명 문자열 (파일 경로 아닌 것). 없으면 None
 - **참고 문서**: `.pdf`, `.txt`, `.md`, `.docx` 확장자를 가진 경로들. 없으면 None
 - **프로젝트 이름**: `project:프로젝트명` 또는 `@프로젝트명` 형식. 없으면 None
-  - 있으면 `~/dotfiles/skills/meeting/projects/{project}/terms.md`를 읽어 교정/요약에 활용
+  - 있으면 아래 두 파일을 각각 읽는다.
+    - `~/dotfiles/skills/meeting/projects/{project}/terms.md`: 프로젝트 고유명사, 기술 용어, STT 오인식 교정 패턴에 사용
+    - `~/dotfiles/skills/meeting/projects/{project}/config.md`: 조직 역할, 요약 형식, 업로드 대상과 자동 업로드 정책에 사용
+  - `terms.md`가 없으면 프로젝트 전용 용어 교정 없이 진행한다.
+  - `config.md`가 없으면 프로젝트 전용 요약·업로드 정책을 적용하지 않고 기존 공용 흐름으로 진행한다.
+  - 한 파일이 없어도 다른 파일은 독립적으로 적용한다.
 
 예시: `audio.wav XQBot 리뷰 2명 BIRD,GRPO agenda.txt`
 → title=`XQBot 리뷰`, speakers=`2`, context=`BIRD,GRPO`, docs=`[agenda.txt]`
@@ -299,11 +304,18 @@ cd ~/meeting_tools && .venv/bin/python3 pipeline.py ~/meetings/audio.wav "XQBot 
 
 ### Step 4: Claude 교정 + 요약
 
-**프로젝트 용어 로드 (project가 있을 때):**
+**프로젝트 컨텍스트 로드 (project가 있을 때):**
 
-`~/dotfiles/skills/meeting/projects/{project}/terms.md` 파일을 읽는다.
-- 파일이 없으면 무시하고 진행한다.
-- STT 오인식 교정 패턴으로 transcript를 수정하고, 기술 용어를 교정·요약에 반영한다.
+아래 두 파일을 각각 읽는다.
+
+- `~/dotfiles/skills/meeting/projects/{project}/terms.md`
+  - 있으면 STT 오인식 교정 패턴으로 transcript를 수정하고, 기술 용어를 교정·요약에 반영한다.
+  - 없으면 프로젝트 전용 용어 교정 없이 진행한다.
+- `~/dotfiles/skills/meeting/projects/{project}/config.md`
+  - 있으면 조직 역할과 출처 우선순위, 요약 형식, 업로드 대상과 자동 업로드 정책을 적용한다.
+  - 없으면 프로젝트 전용 요약·업로드 정책을 적용하지 않고 기존 공용 흐름으로 진행한다.
+
+한 파일이 없어도 다른 파일은 독립적으로 적용한다. config의 정책과 transcript가 충돌하면 config에 적힌 출처 우선순위를 따르며, 근거 없이 내용을 보완하지 않는다.
 
 **교정 (doc_content 또는 project terms가 있을 때):**
 
@@ -347,9 +359,11 @@ transcript에서 STT 오류를 교정한다.
 
 각 항목은 대화록에 명확히 언급된 내용과 그 의미를 바탕으로만 작성한다. 추측은 금지.
 
-### Step 4.5: 사용자 확인 + 업로드 선택
+### Step 4.5: 요약 확인 + 업로드 분기
 
-터미널에 출력 (meeting_type != "seminar"인 경우):
+프로젝트 `config.md`에 요약 형식이 있으면 해당 형식의 모든 섹션을 미리보기로 먼저 출력한다. 예를 들어 `ai-platform`은 `회의 요약`, `주요 결정사항`, `액션 아이템`, `확인 필요`를 모두 보여준다.
+
+프로젝트 전용 요약 형식이 없을 때 터미널에 출력 (meeting_type != "seminar"인 경우):
 ```
 ---
 📋 회의 요약
@@ -363,7 +377,7 @@ transcript에서 STT 오류를 교정한다.
 ---
 ```
 
-터미널에 출력 (meeting_type == "seminar"인 경우):
+프로젝트 전용 요약 형식이 없을 때 터미널에 출력 (meeting_type == "seminar"인 경우):
 ```
 ---
 📋 회의 요약
@@ -379,6 +393,16 @@ transcript에서 STT 오류를 교정한다.
 (Insight 항목들)
 ---
 ```
+
+#### 프로젝트 전용 Notion 자동 업로드
+
+AskUserQuestion을 호출하기 전에 다음 분기를 먼저 판정한다.
+
+- project의 `config.md`에서 구조화 필드 `notion_auto_upload: true`와 parent 설정이 확인되면 config의 네 섹션 요약 미리보기를 보여주되 업로드 대상은 묻지 않는다.
+- **REQUIRED:** 자동 업로드를 실행하기 전에 `references/project-notion-auto-upload.md`를 처음부터 끝까지 읽고 제목 정규화, 페이지네이션, 중복 판정, mutation, 최종 검증, 오류 처리 절차를 모두 따른다.
+- 자동 업로드가 활성화되어 있지만 설정이 유효하지 않으면 reference의 실패 절차로 종료한다.
+- 프로젝트 자동 업로드 조건이 없으면 이 분기를 실행하지 않고 아래의 기존 AskUserQuestion 흐름으로 진행한다.
+- 이 자동 업로드 분기에 들어간 뒤에는 성공·실패와 관계없이 아래의 기존 AskUserQuestion 흐름으로 떨어지지 않는다.
 
 AskUserQuestion 도구로 묻는다:
 - 질문: "위 내용을 어디에 업로드할까요?"
