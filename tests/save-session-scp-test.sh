@@ -3,6 +3,7 @@ set -euo pipefail
 
 ROOT="$(cd "$(dirname "${BASH_SOURCE[0]}")/.." && pwd)"
 SCRIPT="$ROOT/scripts/save-session-scp.sh"
+SETUP_SCRIPT="$ROOT/setup.sh"
 
 fail() {
   echo "FAIL: $*" >&2
@@ -19,6 +20,13 @@ assert_file_contains() {
 }
 
 [ -f "$SCRIPT" ] || fail "missing save script: $SCRIPT"
+
+if grep -Fq '/home/geonhee/dev/hermes-agent' "$SCRIPT"; then
+  fail "save script must not depend on the removed Hermes Agent checkout"
+fi
+if grep -Fq '$HOME/.hermes' "$SETUP_SCRIPT"; then
+  fail "setup script must not recreate Hermes Agent user data"
+fi
 
 temp_home="$(mktemp -d)"
 trap 'rm -rf "$temp_home"' EXIT
@@ -61,12 +69,12 @@ printf '{"session_id":"abc12345","transcript_path":"%s","source":"codex"}\n' "$t
 
 assert_file_contains "$remote_log" "geonhee-ubuntu" "remote host should default to geonhee-ubuntu"
 assert_file_contains "$remote_log" "-P 22" "scp should use Ubuntu SSH port 22 by default"
-assert_file_contains "$remote_log" "/home/geonhee/wiki/raw/unprocessed" "remote upload should target Hermes default wiki raw/unprocessed"
+assert_file_contains "$remote_log" "/home/geonhee/wiki/raw/unprocessed" "remote upload should target the default wiki raw/unprocessed directory"
 if grep -Fq "process_longmemory_raw.py" "$remote_log"; then
-  fail "remote processing should be disabled by default; Hermes handles raw/unprocessed classification"
+  fail "remote processing should be disabled by default"
 fi
 if grep -Fq "update_longmemory_wiki.py" "$remote_log"; then
-  fail "remote wiki update should be disabled by default; Hermes handles raw/unprocessed classification"
+  fail "remote wiki update should be disabled by default"
 fi
 
 : >"$remote_log"
@@ -76,7 +84,7 @@ printf '{"session_id":"abc12345","transcript_path":"%s","source":"codex"}\n' "$t
 assert_file_contains "$remote_log" "process_longmemory_raw.py" "opt-in remote processing should classify the uploaded raw session"
 assert_file_contains "$remote_log" "update_longmemory_wiki.py" "opt-in remote processing should refresh wiki metadata"
 
-# 기본 Hermes llm-wiki 경로는 ~/wiki이므로 opt-in 원격 processor도 WIKI_PATH=/home/geonhee/wiki로 실행되어야 한다.
+# 기본 llm-wiki 경로는 ~/wiki이므로 opt-in 원격 processor도 WIKI_PATH=/home/geonhee/wiki로 실행되어야 한다.
 grep -Fq "WIKI_PATH=/home/geonhee/wiki" "$remote_log" || fail "opt-in remote processor should run with WIKI_PATH=/home/geonhee/wiki"
 
 echo "PASS"

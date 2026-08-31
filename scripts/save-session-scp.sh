@@ -14,7 +14,7 @@ SESSIONS_DIR="${SAVE_SESSION_DIR:-$LOCAL_LONGMEMORY_DIR/logs/session-hooks}"
 mkdir -p "$SESSIONS_DIR"
 LOG_FILE="$SESSIONS_DIR/save-session.log"
 SAVE_SESSION_SCRIPT_DIR="$(cd "$(dirname "${BASH_SOURCE[0]}")" && pwd)"
-LONGMEMORY_BUILTIN_SKILL_DIR="${LONGMEMORY_BUILTIN_SKILL_DIR:-/home/geonhee/dev/hermes-agent/skills/research/llm-wiki}"
+LONGMEMORY_BUILTIN_SKILL_DIR="${LONGMEMORY_BUILTIN_SKILL_DIR:-$SAVE_SESSION_SCRIPT_DIR/../skills/llm-wiki}"
 LONGMEMORY_BUILTIN_SCRIPT_DIR="${LONGMEMORY_BUILTIN_SCRIPT_DIR:-$LONGMEMORY_BUILTIN_SKILL_DIR/scripts}"
 exec 2>>"$LOG_FILE"
 
@@ -184,7 +184,7 @@ REMOTE_BIN_DIR="${LONGMEMORY_REMOTE_BIN_DIR:-/home/geonhee/.local/share/llm-wiki
 REMOTE_PROCESS_SCRIPT="${LONGMEMORY_REMOTE_PROCESS_SCRIPT:-$REMOTE_BIN_DIR/process_longmemory_raw.py}"
 REMOTE_UPDATE_SCRIPT="${LONGMEMORY_REMOTE_UPDATE_SCRIPT:-$REMOTE_BIN_DIR/update_longmemory_wiki.py}"
 REMOTE_PROCESS_LOG="${LONGMEMORY_REMOTE_PROCESS_LOG:-/home/geonhee/.local/state/llm-wiki/process.log}"
-# 기본값은 전송만 수행한다. 분류/위키 반영은 Hermes가 raw/unprocessed를 감시하며 처리한다.
+# 기본값은 전송만 수행한다. 분류/위키 반영은 명시적으로 활성화할 때만 실행한다.
 # 이전 동작이 필요하면 LONGMEMORY_REMOTE_PROCESS_ENABLED=1 로 명시한다.
 REMOTE_PROCESS_ENABLED="${LONGMEMORY_REMOTE_PROCESS_ENABLED:-0}"
 SESSION_SHORT="${SESSION_ID:0:8}"
@@ -230,8 +230,7 @@ _run_remote_transfer() {
     fi
 
     if [ "$REMOTE_PROCESS_ENABLED" = "1" ]; then
-        # Keep the canonical LONGMEMORY processor on the remote host in sync with the built-in Hermes llm-wiki copy.
-        # Fallback to this dotfiles checkout only if the built-in script is absent.
+        # Keep the canonical LONGMEMORY processor on the remote host in sync with this dotfiles checkout.
         local script_dir
         script_dir="$LONGMEMORY_BUILTIN_SCRIPT_DIR"
         [ -d "$script_dir" ] || script_dir="$SAVE_SESSION_SCRIPT_DIR"
@@ -260,7 +259,7 @@ _run_remote_transfer() {
                     "$REMOTE_HOST" "if [ -f $process_script_q ]; then WIKI_PATH=$remote_wiki_q python3 $process_script_q $remote_file_q >> $process_log_q 2>&1; else echo '[save-session:bg] missing process script: $REMOTE_PROCESS_SCRIPT' >> $process_log_q; fi; if [ -f $update_script_q ]; then WIKI_PATH=$remote_wiki_q python3 $update_script_q >> $process_log_q 2>&1; fi"
                 echo "[save-session:bg] LONGMEMORY 처리 스크립트 트리거됨"
             else
-                echo "[save-session:bg] LONGMEMORY 처리 스크립트 미실행; Hermes classifier 대기"
+                echo "[save-session:bg] LONGMEMORY 처리 스크립트 미실행; upload only"
             fi
             break
         fi

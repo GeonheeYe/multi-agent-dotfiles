@@ -702,3 +702,7 @@
 [2026-08-19 09:55:09 ] 감시 시작: threshold=239,800,000,000원, interval=30s, member_id=3576842387198770202
 [2026-08-19 09:55:10 ] 확인: pay_amount=265,783,615,029원, remain=0원, total_order_qty=7,745,446
 [2026-08-19 09:55:11 ] Dooray DM 발송 완료. 감시를 종료합니다.
+[2026-08-29 12:33:28 ] 감시 시작: threshold=239,800,000,000원, interval=30s, member_id=3576842387198770202
+[2026-08-29 12:33:28 ] 오류: <urlopen error [Errno 8] nodename nor servname provided, or not known>
+[2026-08-29 12:34:01 ] 확인: pay_amount=265,783,615,029원, remain=0원, total_order_qty=7,745,446
+[2026-08-29 12:34:01 ] Dooray DM 발송 완료. 감시를 종료합니다.
