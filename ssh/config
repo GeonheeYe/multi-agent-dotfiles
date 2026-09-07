@@ -11,7 +11,7 @@ Host geonhee-s20
     ServerAliveCountMax 3
 
 Host geonhee-ubuntu
-    HostName 192.168.0.8
+    HostName 100.71.103.11
     Port 22
     User geonhee
     IdentityFile ~/.ssh/id_ed25519
